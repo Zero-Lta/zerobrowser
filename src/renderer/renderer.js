@@ -1486,8 +1486,19 @@ function getRelativeTime(ts) {
   return new Date(then).toLocaleDateString();
 }
 
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function renderDownloadItem(d, isActive) {
   const { cat, icon } = getFileCategory(d.filename || '', d.mime || '');
+  const safeFilename = escapeHtml(d.filename || '');
   const percent = d.percent || 0;
   const state = d.finalState || d.state;
   const isPaused = d.isPaused;
@@ -1572,10 +1583,10 @@ function renderDownloadItem(d, isActive) {
   }
   
   return `
-    <div class="download-item" data-id="${d.id}">
+    <div class="download-item" data-id="${escapeHtml(d.id)}">
       <div class="download-icon icon-${cat}">${icon}</div>
       <div class="download-info">
-        <div class="download-filename" title="${d.filename}">${d.filename}</div>
+        <div class="download-filename" title="${safeFilename}">${safeFilename}</div>
         <div class="download-meta">${metaHtml}</div>
         ${progressHtml}
       </div>

@@ -461,7 +461,9 @@ ipcMain.handle('downloads-list', () => {
 
 ipcMain.handle('download-pause', (_e, id) => {
   const item = activeDownloads.get(id);
-  if (item && item.canResume && !item.isPaused()) item.pause();
+  if (item && !item.isPaused()) {
+    try { item.pause(); } catch (e) {}
+  }
   return !!item;
 });
 
