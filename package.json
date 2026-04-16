@@ -49,8 +49,8 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "SEU_USER_GITHUB",
-      "repo": "ZeroBrowser"
+      "owner": "Zero-Lta",
+      "repo": "zerobrowser"
     }
   },
   "dependencies": {
