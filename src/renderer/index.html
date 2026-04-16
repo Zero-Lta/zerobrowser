@@ -289,7 +289,17 @@
         <h2>Downloads</h2>
         <button class="close-modal" id="closeDownloadsModal">&times;</button>
       </div>
-      <div class="modal-body" id="downloadsList">
+      <div class="downloads-toolbar">
+        <input type="text" class="downloads-search" id="downloadsSearch" placeholder="Pesquisar...">
+        <select class="downloads-filter" id="downloadsFilter">
+          <option value="all">Todos</option>
+          <option value="active">A descarregar</option>
+          <option value="completed">Concluídos</option>
+          <option value="cancelled">Cancelados/Falhas</option>
+        </select>
+        <button class="btn-secondary" id="clearDownloadsBtn" title="Limpar histórico">Limpar</button>
+      </div>
+      <div class="modal-body downloads-body" id="downloadsList">
         <!-- Downloads will be loaded here -->
       </div>
     </div>

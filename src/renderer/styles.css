@@ -2020,6 +2020,164 @@ body.incognito .nav-bar::before {
   cursor: pointer;
 }
 
+/* ========================================
+   Download Manager
+   ======================================== */
+.downloads-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  align-items: center;
+}
+
+.downloads-search {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 7px 10px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.downloads-search:focus { border-color: var(--accent, #6366f1); }
+
+.downloads-filter {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 7px 10px;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+
+.downloads-toolbar .btn-secondary {
+  padding: 7px 14px;
+  font-size: 12px;
+}
+
+.downloads-body {
+  padding: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.download-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+
+.download-item:hover { background: var(--bg-hover); }
+
+.download-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+  color: var(--accent, #6366f1);
+}
+
+.download-icon.icon-video   { background: rgba(239, 68, 68, 0.15);  color: #ef4444; }
+.download-icon.icon-audio   { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.download-icon.icon-image   { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.download-icon.icon-archive { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+.download-icon.icon-doc     { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.download-icon.icon-exe     { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+
+.download-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.download-filename {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.download-meta {
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.download-meta .sep { opacity: 0.4; }
+.download-meta .status-done     { color: #10b981; }
+.download-meta .status-failed   { color: #ef4444; }
+.download-meta .status-paused   { color: #f59e0b; }
+.download-meta .status-active   { color: var(--accent, #6366f1); }
+
+.download-progress-wrap {
+  margin-top: 6px;
+  height: 4px;
+  background: var(--bg-elevated);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.download-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--accent, #6366f1);
+  transition: width 0.2s ease;
+}
+
+.download-progress-bar.paused { background: #f59e0b; }
+.download-progress-bar.done   { background: #10b981; }
+.download-progress-bar.failed { background: #ef4444; }
+
+.download-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.download-action-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+}
+
+.download-action-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+
+.download-action-btn.danger:hover { color: #ef4444; }
+.download-action-btn.primary:hover { color: var(--accent, #6366f1); }
+
 /* About — Check Updates */
 .about-actions {
   margin-top: 18px;

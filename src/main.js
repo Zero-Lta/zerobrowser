@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, session, Menu, nativeImage, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, session, Menu, nativeImage, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
@@ -310,6 +310,7 @@ function createWindow(options = {}) {
   // Set up ad blocker and tracking blocker on this session
   const ses = incognito ? session.fromPartition(partition) : session.defaultSession;
   setupSessionBlocking(ses, win.id);
+  setupDownloadHandler(ses);
   
   // Load extensions (not in incognito)
   if (!incognito) {
@@ -354,6 +355,155 @@ function saveExtensionsConfig() {
     console.error('Failed to save extensions config:', e);
   }
 }
+
+// ==========================================
+// Download Manager
+// ==========================================
+const downloadsHistoryPath = path.join(userDataPath, 'downloads.json');
+const activeDownloads = new Map(); // id -> DownloadItem
+let downloadHistory = []; // completed/cancelled entries persisted
+
+function loadDownloadHistory() {
+  try {
+    if (fs.existsSync(downloadsHistoryPath)) {
+      downloadHistory = JSON.parse(fs.readFileSync(downloadsHistoryPath, 'utf8'));
+    }
+  } catch (e) { downloadHistory = []; }
+}
+
+function saveDownloadHistory() {
+  try {
+    // Keep only last 200
+    const toSave = downloadHistory.slice(0, 200);
+    fs.writeFileSync(downloadsHistoryPath, JSON.stringify(toSave, null, 2));
+  } catch (e) {}
+}
+
+function broadcastDownload(payload) {
+  BrowserWindow.getAllWindows().forEach(w => {
+    if (!w.isDestroyed()) w.webContents.send('download-update', payload);
+  });
+}
+
+function snapshotActive(id, item, extra = {}) {
+  const received = item.getReceivedBytes();
+  const total = item.getTotalBytes();
+  return {
+    id,
+    filename: item.getFilename(),
+    savePath: item.getSavePath(),
+    url: item.getURL(),
+    mime: item.getMimeType(),
+    receivedBytes: received,
+    totalBytes: total,
+    percent: total > 0 ? Math.round((received / total) * 100) : 0,
+    state: item.getState(), // 'progressing' | 'completed' | 'cancelled' | 'interrupted'
+    isPaused: item.isPaused(),
+    startTime: item.getStartTime(),
+    ...extra
+  };
+}
+
+function setupDownloadHandler(ses) {
+  if (ses.__downloadsConfigured) return;
+  ses.__downloadsConfigured = true;
+
+  ses.on('will-download', (_event, item, _webContents) => {
+    const id = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    activeDownloads.set(id, item);
+
+    // Default save path (Downloads folder) — Electron handles this automatically,
+    // but we respect user preference for "ask where to save"
+    // (Renderer stores that via localStorage; main can't read it, so we check via flag)
+    // For simplicity, Electron will use OS default Downloads unless a dialog is shown.
+
+    // Track speed (bytes/sec)
+    let lastBytes = 0;
+    let lastTick = Date.now();
+    let speed = 0;
+
+    const sendUpdate = (extra = {}) => {
+      const now = Date.now();
+      const deltaTime = (now - lastTick) / 1000;
+      const current = item.getReceivedBytes();
+      if (deltaTime > 0.5) {
+        speed = (current - lastBytes) / deltaTime;
+        lastBytes = current;
+        lastTick = now;
+      }
+      broadcastDownload({ type: 'update', item: snapshotActive(id, item, { speed, ...extra }) });
+    };
+
+    sendUpdate({ event: 'started' });
+
+    item.on('updated', (_e, state) => {
+      sendUpdate({ event: state });
+    });
+
+    item.once('done', (_e, state) => {
+      const finalSnap = snapshotActive(id, item, { speed: 0, event: 'done', finalState: state });
+      activeDownloads.delete(id);
+      // Persist to history
+      downloadHistory.unshift(finalSnap);
+      saveDownloadHistory();
+      broadcastDownload({ type: 'done', item: finalSnap });
+    });
+  });
+}
+
+ipcMain.handle('downloads-list', () => {
+  const active = [];
+  for (const [id, item] of activeDownloads.entries()) {
+    try { active.push(snapshotActive(id, item)); } catch (e) {}
+  }
+  return { active, history: downloadHistory };
+});
+
+ipcMain.handle('download-pause', (_e, id) => {
+  const item = activeDownloads.get(id);
+  if (item && item.canResume && !item.isPaused()) item.pause();
+  return !!item;
+});
+
+ipcMain.handle('download-resume', (_e, id) => {
+  const item = activeDownloads.get(id);
+  if (item && item.canResume()) item.resume();
+  return !!item;
+});
+
+ipcMain.handle('download-cancel', (_e, id) => {
+  const item = activeDownloads.get(id);
+  if (item) { try { item.cancel(); } catch (e) {} }
+  return !!item;
+});
+
+ipcMain.handle('download-show-in-folder', (_e, savePath) => {
+  if (savePath && fs.existsSync(savePath)) {
+    shell.showItemInFolder(savePath);
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('download-open-file', (_e, savePath) => {
+  if (savePath && fs.existsSync(savePath)) {
+    shell.openPath(savePath);
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('download-remove-from-history', (_e, id) => {
+  downloadHistory = downloadHistory.filter(d => d.id !== id);
+  saveDownloadHistory();
+  return true;
+});
+
+ipcMain.handle('download-clear-history', () => {
+  downloadHistory = [];
+  saveDownloadHistory();
+  return true;
+});
 
 // ==========================================
 // Auto-Updater (electron-updater + GitHub)
@@ -432,6 +582,8 @@ ipcMain.handle('get-app-version', () => app.getVersion());
 app.whenReady().then(async () => {
   loadSitePermissions();
   loadPersistedExtensions();
+  loadDownloadHistory();
+  setupDownloadHandler(session.defaultSession);
   setupAutoUpdater();
   
   // Load all persisted extensions into default session

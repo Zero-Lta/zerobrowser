@@ -1052,6 +1052,7 @@ function setupEventListeners() {
   // Downloads button
   downloadsBtn.addEventListener('click', () => {
     downloadsModal.classList.add('active');
+    loadDownloads();
   });
 
   closeDownloadsModal.addEventListener('click', () => {
@@ -1435,19 +1436,313 @@ async function deleteTodo(id) {
   loadTodos();
 }
 
-// Load downloads (placeholder for now)
-function loadDownloads() {
-  downloadsList.innerHTML = `
-    <div class="empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-        <polyline points="7 10 12 15 17 10"></polyline>
-        <line x1="12" y1="15" x2="12" y2="3"></line>
-      </svg>
-      <p>Nenhum download recente</p>
+// ========================================
+// Download Manager
+// ========================================
+let downloadsState = { active: [], history: [] };
+let downloadsSearchQuery = '';
+let downloadsFilterValue = 'all';
+
+function formatBytes(bytes) {
+  if (!bytes || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return (bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+}
+
+function formatSpeed(bps) {
+  if (!bps || bps <= 0) return '';
+  return formatBytes(bps) + '/s';
+}
+
+function formatETA(received, total, bps) {
+  if (!bps || bps <= 0 || !total || total <= received) return '';
+  const remaining = (total - received) / bps;
+  if (remaining < 60) return Math.round(remaining) + 's';
+  if (remaining < 3600) return Math.round(remaining / 60) + 'm';
+  return Math.round(remaining / 3600) + 'h';
+}
+
+function getFileCategory(filename, mime) {
+  const ext = (filename.split('.').pop() || '').toLowerCase();
+  if (/^(mp4|mkv|webm|avi|mov|flv|wmv|m4v)$/.test(ext) || (mime || '').startsWith('video/')) return { cat: 'video', icon: '🎬' };
+  if (/^(mp3|wav|flac|ogg|m4a|aac|wma)$/.test(ext) || (mime || '').startsWith('audio/')) return { cat: 'audio', icon: '🎵' };
+  if (/^(jpg|jpeg|png|gif|webp|svg|bmp|ico|heic|tiff)$/.test(ext) || (mime || '').startsWith('image/')) return { cat: 'image', icon: '🖼️' };
+  if (/^(zip|rar|7z|tar|gz|bz2|xz|iso)$/.test(ext)) return { cat: 'archive', icon: '📦' };
+  if (/^(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|md|odt|ods|odp|csv)$/.test(ext)) return { cat: 'doc', icon: '📄' };
+  if (/^(exe|msi|dmg|deb|rpm|appimage|app|apk)$/.test(ext)) return { cat: 'exe', icon: '⚙️' };
+  return { cat: 'generic', icon: '📎' };
+}
+
+function getRelativeTime(ts) {
+  if (!ts) return '';
+  const now = Date.now();
+  const then = ts < 1e12 ? ts * 1000 : ts; // handle seconds vs ms
+  const diff = Math.max(0, now - then) / 1000;
+  if (diff < 60) return 'agora mesmo';
+  if (diff < 3600) return Math.round(diff / 60) + ' min';
+  if (diff < 86400) return Math.round(diff / 3600) + 'h';
+  if (diff < 86400 * 7) return Math.round(diff / 86400) + 'd';
+  return new Date(then).toLocaleDateString();
+}
+
+function renderDownloadItem(d, isActive) {
+  const { cat, icon } = getFileCategory(d.filename || '', d.mime || '');
+  const percent = d.percent || 0;
+  const state = d.finalState || d.state;
+  const isPaused = d.isPaused;
+  const isDone = state === 'completed';
+  const isFailed = state === 'cancelled' || state === 'interrupted' || state === 'failed';
+  
+  let statusText = '';
+  let statusClass = '';
+  let barClass = '';
+  
+  if (isActive) {
+    if (isPaused) {
+      statusText = 'Pausado';
+      statusClass = 'status-paused';
+      barClass = 'paused';
+    } else {
+      statusText = 'A descarregar';
+      statusClass = 'status-active';
+    }
+  } else if (isDone) {
+    statusText = '✓ Concluído';
+    statusClass = 'status-done';
+    barClass = 'done';
+  } else if (isFailed) {
+    statusText = state === 'cancelled' ? '✕ Cancelado' : '⚠ Falhou';
+    statusClass = 'status-failed';
+    barClass = 'failed';
+  }
+  
+  const sizeText = d.totalBytes > 0 
+    ? `${formatBytes(d.receivedBytes)} / ${formatBytes(d.totalBytes)}`
+    : formatBytes(d.receivedBytes);
+  
+  const speedText = isActive && !isPaused && d.speed ? formatSpeed(d.speed) : '';
+  const etaText = isActive && !isPaused ? formatETA(d.receivedBytes, d.totalBytes, d.speed) : '';
+  const timeText = !isActive ? getRelativeTime(d.startTime) : '';
+  
+  const metaParts = [
+    `<span class="${statusClass}">${statusText}</span>`,
+    sizeText,
+    speedText,
+    etaText,
+    timeText
+  ].filter(Boolean);
+  
+  const metaHtml = metaParts.map((p, i) => 
+    i === 0 ? p : `<span class="sep">·</span>${p}`
+  ).join('');
+  
+  const showProgress = isActive || (!isDone && !isFailed);
+  const progressHtml = showProgress ? `
+    <div class="download-progress-wrap">
+      <div class="download-progress-bar ${barClass}" style="width:${percent}%"></div>
+    </div>` : '';
+  
+  // Actions
+  let actionsHtml = '';
+  if (isActive) {
+    if (isPaused) {
+      actionsHtml += `<button class="download-action-btn primary" data-action="resume" data-id="${d.id}" title="Retomar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></button>`;
+    } else {
+      actionsHtml += `<button class="download-action-btn" data-action="pause" data-id="${d.id}" title="Pausar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg></button>`;
+    }
+    actionsHtml += `<button class="download-action-btn danger" data-action="cancel" data-id="${d.id}" title="Cancelar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>`;
+  } else if (isDone) {
+    actionsHtml += `<button class="download-action-btn primary" data-action="open" data-path="${encodeURIComponent(d.savePath)}" title="Abrir">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></button>`;
+    actionsHtml += `<button class="download-action-btn" data-action="folder" data-path="${encodeURIComponent(d.savePath)}" title="Mostrar na pasta">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></button>`;
+  } else if (isFailed) {
+    // Retry: we can just open the URL so user can retry manually
+    actionsHtml += `<button class="download-action-btn primary" data-action="retry" data-url="${encodeURIComponent(d.url)}" title="Tentar novamente">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg></button>`;
+  }
+  
+  if (!isActive) {
+    actionsHtml += `<button class="download-action-btn danger" data-action="remove" data-id="${d.id}" title="Remover do histórico">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
+  }
+  
+  return `
+    <div class="download-item" data-id="${d.id}">
+      <div class="download-icon icon-${cat}">${icon}</div>
+      <div class="download-info">
+        <div class="download-filename" title="${d.filename}">${d.filename}</div>
+        <div class="download-meta">${metaHtml}</div>
+        ${progressHtml}
+      </div>
+      <div class="download-actions">${actionsHtml}</div>
     </div>
   `;
 }
+
+function renderDownloads() {
+  const list = downloadsList;
+  if (!list) return;
+  
+  const q = (downloadsSearchQuery || '').toLowerCase();
+  const filter = downloadsFilterValue;
+  
+  let items = [];
+  
+  // Active always first
+  if (filter === 'all' || filter === 'active') {
+    downloadsState.active.forEach(d => items.push({ d, isActive: true }));
+  }
+  
+  if (filter === 'all' || filter === 'completed' || filter === 'cancelled') {
+    downloadsState.history.forEach(d => {
+      const state = d.finalState || d.state;
+      const isDone = state === 'completed';
+      const isFailed = state === 'cancelled' || state === 'interrupted' || state === 'failed';
+      if (filter === 'completed' && !isDone) return;
+      if (filter === 'cancelled' && !isFailed) return;
+      items.push({ d, isActive: false });
+    });
+  }
+  
+  if (q) {
+    items = items.filter(({ d }) => 
+      (d.filename || '').toLowerCase().includes(q) ||
+      (d.url || '').toLowerCase().includes(q)
+    );
+  }
+  
+  if (items.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <p>${q ? 'Sem resultados' : 'Nenhum download ainda'}</p>
+      </div>
+    `;
+    return;
+  }
+  
+  list.innerHTML = items.map(({ d, isActive }) => renderDownloadItem(d, isActive)).join('');
+}
+
+async function loadDownloads() {
+  if (!window.electronAPI?.downloadsList) return;
+  try {
+    downloadsState = await window.electronAPI.downloadsList();
+    renderDownloads();
+  } catch (e) {
+    console.error('Failed to load downloads', e);
+  }
+}
+
+function setupDownloadManager() {
+  if (!window.electronAPI?.onDownloadUpdate) return;
+  
+  // Live updates from main
+  window.electronAPI.onDownloadUpdate((payload) => {
+    if (!payload || !payload.item) return;
+    const { type, item } = payload;
+    
+    if (type === 'update') {
+      const idx = downloadsState.active.findIndex(d => d.id === item.id);
+      if (idx >= 0) downloadsState.active[idx] = item;
+      else downloadsState.active.push(item);
+    } else if (type === 'done') {
+      downloadsState.active = downloadsState.active.filter(d => d.id !== item.id);
+      downloadsState.history.unshift(item);
+    }
+    
+    // Only re-render if modal open
+    if (downloadsModal && downloadsModal.classList.contains('active')) {
+      renderDownloads();
+    }
+    
+    // Show toast for completed downloads
+    if (type === 'done') {
+      const state = item.finalState || item.state;
+      if (state === 'completed') {
+        if (typeof showToast === 'function') showToast(`✓ ${item.filename} descarregado`);
+      }
+    }
+  });
+  
+  // Toolbar handlers
+  const search = document.getElementById('downloadsSearch');
+  const filter = document.getElementById('downloadsFilter');
+  const clearBtn = document.getElementById('clearDownloadsBtn');
+  
+  if (search) {
+    search.addEventListener('input', (e) => {
+      downloadsSearchQuery = e.target.value;
+      renderDownloads();
+    });
+  }
+  
+  if (filter) {
+    filter.addEventListener('change', (e) => {
+      downloadsFilterValue = e.target.value;
+      renderDownloads();
+    });
+  }
+  
+  if (clearBtn) {
+    clearBtn.addEventListener('click', async () => {
+      if (!confirm('Limpar todo o histórico de downloads?')) return;
+      await window.electronAPI.downloadClearHistory();
+      downloadsState.history = [];
+      renderDownloads();
+    });
+  }
+  
+  // Action button delegation
+  if (downloadsList) {
+    downloadsList.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.download-action-btn');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const id = btn.dataset.id;
+      const p = btn.dataset.path ? decodeURIComponent(btn.dataset.path) : null;
+      const u = btn.dataset.url ? decodeURIComponent(btn.dataset.url) : null;
+      
+      try {
+        if (action === 'pause') await window.electronAPI.downloadPause(id);
+        else if (action === 'resume') await window.electronAPI.downloadResume(id);
+        else if (action === 'cancel') await window.electronAPI.downloadCancel(id);
+        else if (action === 'open') await window.electronAPI.downloadOpenFile(p);
+        else if (action === 'folder') await window.electronAPI.downloadShowInFolder(p);
+        else if (action === 'retry') {
+          if (u) {
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (tab && tab.webview) tab.webview.loadURL(u);
+          }
+        } else if (action === 'remove') {
+          await window.electronAPI.downloadRemoveFromHistory(id);
+          downloadsState.history = downloadsState.history.filter(d => d.id !== id);
+          renderDownloads();
+        }
+      } catch (err) {
+        console.error('Download action failed:', action, err);
+      }
+    });
+  }
+  
+  // Live speed refresh every second while downloading (in case no 'updated' event)
+  setInterval(() => {
+    if (downloadsState.active.length > 0 && downloadsModal?.classList.contains('active')) {
+      renderDownloads();
+    }
+  }, 1000);
+}
+
+setTimeout(setupDownloadManager, 250);
 
 // ========================================
 // Settings Management

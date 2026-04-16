@@ -54,6 +54,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   respondToPermission: (id, decision) => ipcRenderer.send(id, decision),
 
+  // Download Manager
+  downloadsList: () => ipcRenderer.invoke('downloads-list'),
+  downloadPause: (id) => ipcRenderer.invoke('download-pause', id),
+  downloadResume: (id) => ipcRenderer.invoke('download-resume', id),
+  downloadCancel: (id) => ipcRenderer.invoke('download-cancel', id),
+  downloadShowInFolder: (savePath) => ipcRenderer.invoke('download-show-in-folder', savePath),
+  downloadOpenFile: (savePath) => ipcRenderer.invoke('download-open-file', savePath),
+  downloadRemoveFromHistory: (id) => ipcRenderer.invoke('download-remove-from-history', id),
+  downloadClearHistory: () => ipcRenderer.invoke('download-clear-history'),
+  onDownloadUpdate: (callback) => {
+    ipcRenderer.on('download-update', (_e, data) => callback(data));
+  },
+
   // Auto-Updater
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   updaterCheck: () => ipcRenderer.invoke('updater-check'),
