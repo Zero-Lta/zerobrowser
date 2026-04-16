@@ -1,0 +1,46 @@
+# Normalize line endings
+* text=auto eol=lf
+*.exe binary
+*.dll binary
+*.png binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+
+# Exclude from GitHub "Source code (zip/tar.gz)" auto-generated archives.
+# These files/folders won't appear when someone downloads the source archive
+# from a release tag, but remain in the repo for collaborators.
+
+# Build output (should never be in source archives)
+dist/                    export-ignore
+build/                   export-ignore
+out/                     export-ignore
+release/                 export-ignore
+
+# Binary artifacts
+*.exe                    export-ignore
+*.msi                    export-ignore
+*.dmg                    export-ignore
+*.deb                    export-ignore
+*.rpm                    export-ignore
+*.AppImage               export-ignore
+*.zip                    export-ignore
+*.blockmap               export-ignore
+
+# Dev/CI configuration not useful for end users
+.github/                 export-ignore
+.vscode/                 export-ignore
+.windsurf/               export-ignore
+.idea/                   export-ignore
+
+# Dependency lockfiles and caches
+node_modules/            export-ignore
+.npm/                    export-ignore
+.cache/                  export-ignore
+
+# Internal meta files
+.gitattributes           export-ignore
+.gitignore               export-ignore
+progress.txt             export-ignore
+*.log                    export-ignore
