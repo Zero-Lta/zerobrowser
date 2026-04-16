@@ -32,10 +32,31 @@ function getHostFromUrl(url) {
   try { return new URL(url).hostname; } catch (e) { return ''; }
 }
 
+// ==========================================
 // Performance optimizations
-app.commandLine.appendSwitch('disable-features', 'HardwareAcceleration');
-app.commandLine.appendSwitch('disable-gpu');
-app.commandLine.appendSwitch('disable-software-rasterizer');
+// ==========================================
+// Enable GPU hardware acceleration (was incorrectly disabled before)
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
+app.commandLine.appendSwitch('enable-accelerated-video-decode');
+app.commandLine.appendSwitch('enable-accelerated-2d-canvas');
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+
+// Smooth scrolling & compositing
+app.commandLine.appendSwitch('enable-smooth-scrolling');
+app.commandLine.appendSwitch('enable-features', 'CalculateNativeWinOcclusion,UseSkiaRenderer,NetworkServiceInProcess2');
+
+// Networking & caching
+app.commandLine.appendSwitch('disk-cache-size', String(512 * 1024 * 1024)); // 512 MB cache
+
+// Memory / V8
+app.commandLine.appendSwitch('js-flags', '--max-old-space-size=4096 --expose-gc');
+
+// Disable unused features that consume resources
+app.commandLine.appendSwitch('disable-features', 'Translate,OptimizationHints,MediaRouter,DialMediaRouteProvider');
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 // Data storage paths
 const userDataPath = app.getPath('userData');
@@ -259,8 +280,13 @@ function createWindow(options = {}) {
       webviewTag: true,
       webSecurity: false,
       allowRunningInsecureContent: true,
-      partition: partition
+      partition: partition,
+      backgroundThrottling: false,
+      spellcheck: false,
+      enableWebSQL: false,
+      v8CacheOptions: 'bypassHeatCheck'
     },
+    show: false,
     icon: appIcon
   });
 
@@ -277,6 +303,9 @@ function createWindow(options = {}) {
   win.loadFile(path.join(__dirname, 'renderer/index.html'), {
     query: incognito ? { incognito: '1' } : {}
   });
+
+  // Show only when ready to avoid white flash and perceived delay
+  win.once('ready-to-show', () => { win.show(); });
 
   // Set up ad blocker and tracking blocker on this session
   const ses = incognito ? session.fromPartition(partition) : session.defaultSession;
