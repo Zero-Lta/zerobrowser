@@ -423,15 +423,17 @@ function setupDownloadHandler(ses) {
     let speed = 0;
 
     const sendUpdate = (extra = {}) => {
-      const now = Date.now();
-      const deltaTime = (now - lastTick) / 1000;
-      const current = item.getReceivedBytes();
-      if (deltaTime > 0.5) {
-        speed = (current - lastBytes) / deltaTime;
-        lastBytes = current;
-        lastTick = now;
-      }
-      broadcastDownload({ type: 'update', item: snapshotActive(id, item, { speed, ...extra }) });
+      try {
+        const now = Date.now();
+        const deltaTime = (now - lastTick) / 1000;
+        const current = item.getReceivedBytes();
+        if (deltaTime > 0.5) {
+          speed = (current - lastBytes) / deltaTime;
+          lastBytes = current;
+          lastTick = now;
+        }
+        broadcastDownload({ type: 'update', item: snapshotActive(id, item, { speed, ...extra }) });
+      } catch (e) { /* item may be disposed */ }
     };
 
     sendUpdate({ event: 'started' });
@@ -441,12 +443,15 @@ function setupDownloadHandler(ses) {
     });
 
     item.once('done', (_e, state) => {
-      const finalSnap = snapshotActive(id, item, { speed: 0, event: 'done', finalState: state });
-      activeDownloads.delete(id);
-      // Persist to history
-      downloadHistory.unshift(finalSnap);
-      saveDownloadHistory();
-      broadcastDownload({ type: 'done', item: finalSnap });
+      try {
+        const finalSnap = snapshotActive(id, item, { speed: 0, event: 'done', finalState: state });
+        activeDownloads.delete(id);
+        downloadHistory.unshift(finalSnap);
+        saveDownloadHistory();
+        broadcastDownload({ type: 'done', item: finalSnap });
+      } catch (e) {
+        activeDownloads.delete(id);
+      }
     });
   });
 }
