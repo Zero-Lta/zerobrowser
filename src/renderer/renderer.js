@@ -3026,6 +3026,51 @@ setTimeout(setupAutoUpdaterUI, 200);
   } catch (e) {}
 })();
 
+// Check for updates button in About
+(function setupCheckUpdatesButton() {
+  const btn = document.getElementById('checkUpdatesBtn');
+  const status = document.getElementById('aboutUpdateStatus');
+  if (!btn || !status) return;
+  
+  const setStatus = (text, type = '') => {
+    status.textContent = text;
+    status.className = 'about-update-status' + (type ? ' ' + type : '');
+  };
+  
+  btn.addEventListener('click', async () => {
+    if (!window.electronAPI?.updaterCheck) return;
+    btn.disabled = true;
+    setStatus('A verificar...', 'info');
+    
+    try {
+      const result = await window.electronAPI.updaterCheck();
+      
+      if (!result.ok) {
+        if (result.reason === 'dev') {
+          setStatus('ℹ️ Procura de updates só funciona na versão instalada (não em dev)', 'info');
+        } else {
+          setStatus('❌ Erro: ' + (result.reason || 'desconhecido'), 'error');
+        }
+        btn.disabled = false;
+        return;
+      }
+      
+      // The actual result (available/none) comes via onUpdaterStatus event
+      // Wait briefly for the status event
+      const currentVersion = await window.electronAPI.getAppVersion();
+      if (result.version && result.version !== currentVersion) {
+        setStatus(`🎉 Nova versão disponível: v${result.version}`, 'success');
+      } else {
+        setStatus('✓ Estás na versão mais recente', 'success');
+      }
+    } catch (e) {
+      setStatus('❌ ' + e.message, 'error');
+    } finally {
+      setTimeout(() => { btn.disabled = false; }, 1500);
+    }
+  });
+})();
+
 // Initialize on load
 init();
 // Run after init so DOM is ready
