@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Zero Browser 🌐
 
 Um navegador desktop moderno, leve e rápido construído com Electron e Node.js.
@@ -194,3 +195,6 @@ Desenvolvido com ❤️ usando Electron e Node.js
 ---
 
 **Zero Browser v1.0** - Navegação rápida, segura e moderna! 🚀
+=======
+# zerobrowser
+>>>>>>> 105bf838ac96b0225565bbab6d7cdf4890b67681
