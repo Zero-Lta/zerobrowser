@@ -3015,6 +3015,17 @@ function setupAutoUpdaterUI() {
 
 setTimeout(setupAutoUpdaterUI, 200);
 
+// Fetch app version dynamically into About section
+(async function loadAppVersion() {
+  try {
+    if (window.electronAPI?.getAppVersion) {
+      const v = await window.electronAPI.getAppVersion();
+      const el = document.getElementById('aboutVersion');
+      if (el) el.textContent = 'Versão ' + v;
+    }
+  } catch (e) {}
+})();
+
 // Initialize on load
 init();
 // Run after init so DOM is ready
