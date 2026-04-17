@@ -1,6 +1,6 @@
 {
   "name": "zero-browser",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A modern, lightweight desktop browser built with Electron",
   "main": "src/main.js",
   "scripts": {
