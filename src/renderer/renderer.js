@@ -2557,7 +2557,7 @@ function setupThemeListeners() {
 // Tab Sleeping (suspend inactive tabs)
 // ========================================
 const TAB_SLEEP_MINUTES = 15; // Sleep after 15 min inactive
-let tabSleepEnabled = true;
+let tabSleepEnabled = false;
 let tabSleepInterval = null;
 
 function markTabActive(tabId) {
@@ -2608,6 +2608,7 @@ function checkSleepingTabs() {
 
 function startTabSleepMonitor() {
   if (tabSleepInterval) clearInterval(tabSleepInterval);
+  if (!tabSleepEnabled) return;
   tabSleepInterval = setInterval(checkSleepingTabs, 60 * 1000); // check every minute
 }
 
