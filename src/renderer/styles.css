@@ -322,6 +322,8 @@ body.maximized .browser-container {
   gap: 6px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 50;
 }
 
 .nav-buttons {
@@ -479,7 +481,6 @@ body.maximized .browser-container {
   overflow: hidden;
   position: relative;
   min-height: 0;
-  z-index: 1;
 }
 
 #webviewContainer {
