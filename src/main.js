@@ -60,6 +60,103 @@ app.commandLine.appendSwitch('disable-background-timer-throttling');
 const userDataPath = app.getPath('userData');
 const bookmarksPath = path.join(userDataPath, 'bookmarks.json');
 const historyPath = path.join(userDataPath, 'history.json');
+const statsPath = path.join(userDataPath, 'stats.json');
+
+// ==========================================
+// Discord Telemetry (install + daily heartbeat)
+// ==========================================
+const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1494720393154400306/JgiafgNOEdY6xAYeLitsPioUHfuADcZOYWNhii1HVYXlvNwj8QsuKmc0HmjPlZECyZ-w';
+const GITHUB_REPO = 'Zero-Lta/zerobrowser';
+
+function loadStats() {
+  try {
+    if (fs.existsSync(statsPath)) {
+      return JSON.parse(fs.readFileSync(statsPath, 'utf-8'));
+    }
+  } catch (e) {}
+  return {};
+}
+
+function saveStats(stats) {
+  try {
+    if (!fs.existsSync(userDataPath)) fs.mkdirSync(userDataPath, { recursive: true });
+    fs.writeFileSync(statsPath, JSON.stringify(stats, null, 2));
+  } catch (e) {}
+}
+
+function randomId() {
+  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+
+async function fetchGithubDownloads() {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases`);
+    if (!res.ok) return null;
+    const releases = await res.json();
+    let total = 0;
+    releases.forEach(r => (r.assets || []).forEach(a => { total += a.download_count || 0; }));
+    return { total, releases: releases.length };
+  } catch (e) { return null; }
+}
+
+async function sendDiscordWebhook(event, installId) {
+  try {
+    const gh = await fetchGithubDownloads();
+    const color = event === 'install' ? 0x10b981 : 0x6366f1;
+    const title = event === 'install'
+      ? '🎉 Nova Instalação'
+      : '👋 Utilizador Ativo';
+
+    const fields = [
+      { name: 'Versão', value: `v${app.getVersion()}`, inline: true },
+      { name: 'Plataforma', value: `${process.platform} · ${process.arch}`, inline: true },
+      { name: 'Install ID', value: `\`${installId.slice(0, 8)}\``, inline: true }
+    ];
+    if (gh) {
+      fields.push({ name: '📊 Downloads Totais', value: String(gh.total), inline: true });
+      fields.push({ name: '🏷 Releases', value: String(gh.releases), inline: true });
+    }
+
+    const payload = {
+      username: 'Zero Browser Status',
+      embeds: [{
+        title,
+        color,
+        fields,
+        timestamp: new Date().toISOString(),
+        footer: { text: 'Zero Browser · Telemetria anónima' }
+      }]
+    };
+
+    await fetch(DISCORD_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) { /* silently fail */ }
+}
+
+async function runTelemetry() {
+  try {
+    const stats = loadStats();
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (!stats.installId) {
+      stats.installId = randomId();
+      stats.firstRun = new Date().toISOString();
+      stats.lastHeartbeat = today;
+      saveStats(stats);
+      await sendDiscordWebhook('install', stats.installId);
+      return;
+    }
+
+    if (stats.lastHeartbeat !== today) {
+      stats.lastHeartbeat = today;
+      saveStats(stats);
+      await sendDiscordWebhook('heartbeat', stats.installId);
+    }
+  } catch (e) { /* silently fail */ }
+}
 
 // Ensure data directory exists
 if (!fs.existsSync(userDataPath)) {
@@ -610,7 +707,10 @@ app.whenReady().then(async () => {
   loadDownloadHistory();
   setupDownloadHandler(session.defaultSession);
   setupAutoUpdater();
-  
+
+  // Telemetria Discord (install/heartbeat — anónimo)
+  runTelemetry();
+
   // Load all persisted extensions into default session
   for (const extPath of [...loadedExtensions.keys()]) {
     try {

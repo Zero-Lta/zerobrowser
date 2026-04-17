@@ -79,6 +79,62 @@
     </div>
   </div>
 
+  <div class="download-stats" id="downloadStats" style="margin-top: 28px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+    <div class="stat-card">
+      <div class="stat-value" id="statTotalDownloads">—</div>
+      <div class="stat-label">Downloads totais</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statLatestDownloads">—</div>
+      <div class="stat-label">Downloads desta versão</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statReleases">—</div>
+      <div class="stat-label">Versões lançadas</div>
+    </div>
+  </div>
+  <style>
+    .stat-card {
+      background: var(--surface, rgba(255,255,255,0.03));
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 12px;
+      padding: 16px 22px;
+      min-width: 140px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #818cf8, #a78bfa);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted, #9ca3af);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  </style>
+  <script>
+    (async () => {
+      try {
+        const res = await fetch('https://api.github.com/repos/Zero-Lta/zerobrowser/releases');
+        if (!res.ok) return;
+        const releases = await res.json();
+        let total = 0;
+        const latestDownloads = (releases[0]?.assets || []).reduce((s, a) => s + (a.download_count || 0), 0);
+        releases.forEach(r => (r.assets || []).forEach(a => { total += a.download_count || 0; }));
+        const fmt = n => n.toLocaleString('pt-PT');
+        document.getElementById('statTotalDownloads').textContent = fmt(total);
+        document.getElementById('statLatestDownloads').textContent = fmt(latestDownloads);
+        document.getElementById('statReleases').textContent = fmt(releases.length);
+      } catch (e) { /* silently fail */ }
+    })();
+  </script>
+
   <div style="text-align:center; margin-top: 40px;">
     <p style="font-size: 14px;">
       Procuras uma versão antiga?
