@@ -205,6 +205,19 @@ body.maximized .browser-container {
   color: #ffffff;
 }
 
+/* Drag-and-drop feedback */
+.tab.dragging {
+  opacity: 0.5;
+}
+
+.tab.drag-over-left {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.tab.drag-over-right {
+  box-shadow: inset -3px 0 0 var(--accent);
+}
+
 .tab-title {
   flex: 1;
   font-size: 12.5px;

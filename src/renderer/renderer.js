@@ -612,8 +612,61 @@ function renderTabs() {
       closeTab(tab.id);
     });
 
+    // Drag-and-drop para reordenar tabs
+    tabElement.draggable = true;
+
+    tabElement.addEventListener('dragstart', (e) => {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(tab.id));
+      tabElement.classList.add('dragging');
+    });
+
+    tabElement.addEventListener('dragend', () => {
+      tabElement.classList.remove('dragging');
+      document.querySelectorAll('.tab.drag-over-left, .tab.drag-over-right')
+        .forEach(el => el.classList.remove('drag-over-left', 'drag-over-right'));
+    });
+
+    tabElement.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const rect = tabElement.getBoundingClientRect();
+      const before = e.clientX < rect.left + rect.width / 2;
+      tabElement.classList.toggle('drag-over-left', before);
+      tabElement.classList.toggle('drag-over-right', !before);
+    });
+
+    tabElement.addEventListener('dragleave', () => {
+      tabElement.classList.remove('drag-over-left', 'drag-over-right');
+    });
+
+    tabElement.addEventListener('drop', (e) => {
+      e.preventDefault();
+      tabElement.classList.remove('drag-over-left', 'drag-over-right');
+      const draggedId = Number(e.dataTransfer.getData('text/plain'));
+      if (!draggedId || draggedId === tab.id) return;
+      const rect = tabElement.getBoundingClientRect();
+      const before = e.clientX < rect.left + rect.width / 2;
+      reorderTab(draggedId, tab.id, before);
+    });
+
     tabsContainer.appendChild(tabElement);
   });
+}
+
+// Move a tab (by id) para antes/depois de outra tab (by id)
+function reorderTab(draggedId, targetId, before) {
+  const fromIndex = tabs.findIndex(t => t.id === draggedId);
+  if (fromIndex === -1) return;
+  const [dragged] = tabs.splice(fromIndex, 1);
+  let toIndex = tabs.findIndex(t => t.id === targetId);
+  if (toIndex === -1) {
+    tabs.splice(fromIndex, 0, dragged);
+    return;
+  }
+  if (!before) toIndex += 1;
+  tabs.splice(toIndex, 0, dragged);
+  renderTabs();
 }
 
 // Setup webview events
