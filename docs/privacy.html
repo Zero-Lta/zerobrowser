@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacidade — Zero Browser</title>
+  <meta name="description" content="Política de privacidade do Zero Browser. Zero telemetria, zero rastreadores.">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <img src="assets/logo.png" alt="Zero Browser"><span>Zero Browser</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Início</a></li>
+      <li><a href="features.html">Funcionalidades</a></li>
+      <li><a href="privacy.html">Privacidade</a></li>
+      <li><a href="download.html">Download</a></li>
+      <li><a href="about.html">Sobre</a></li>
+    </ul>
+    <a href="download.html" class="nav-cta">Instalar</a>
+  </div>
+</nav>
+
+<main>
+
+<section class="section container">
+  <div class="section-header">
+    <div class="eyebrow">Privacidade</div>
+    <h1 style="font-size: clamp(32px, 5vw, 48px)">A tua privacidade<br>não é negociável.</h1>
+    <p class="lead">Somos um browser desktop, não uma operação de recolha de dados. Eis o que isso significa na prática.</p>
+  </div>
+
+  <div class="prose">
+
+    <h2>TL;DR</h2>
+    <ul>
+      <li><strong>Zero telemetria.</strong> Não enviamos nenhum dado para servidores nossos. Nunca.</li>
+      <li><strong>Zero contas.</strong> Não há registo, login ou sincronização na cloud.</li>
+      <li><strong>Dados locais.</strong> Histórico, favoritos, passwords — tudo fica guardado na tua máquina.</li>
+      <li><strong>Código aberto.</strong> Podes verificar tudo no GitHub.</li>
+    </ul>
+
+    <h2>Que dados recolhemos?</h2>
+    <p>Nenhuns. O Zero Browser não tem servidor de análise, não liga a APIs de telemetria, não envia relatórios de crash automaticamente.</p>
+
+    <h2>Onde ficam os dados?</h2>
+    <p>Exclusivamente no teu computador, na pasta de dados do utilizador do sistema:</p>
+    <ul>
+      <li><strong>Windows:</strong> <code>%APPDATA%\ZeroBrowser\</code></li>
+    </ul>
+    <p>Isto inclui histórico, favoritos, passwords, notas, to-dos, permissões de sites, downloads e cache.</p>
+
+    <h2>Bloqueio de trackers</h2>
+    <p>Por defeito, bloqueamos pedidos de rede para mais de 70 domínios de tracking conhecidos (Google Analytics, Facebook Pixel, DoubleClick, etc.). O contador na barra mostra quantos foram bloqueados na página atual.</p>
+
+    <h2>Auto-update</h2>
+    <p>O browser verifica se há novas versões em <code>api.github.com</code> (GitHub Releases). Este é o único pedido automático que o próprio Zero Browser faz para o exterior. Podes desativá-lo nas definições.</p>
+
+    <h2>Extensões</h2>
+    <p>Quando instalas uma extensão, ela corre com as suas próprias permissões. Nós não controlamos o que extensões de terceiros fazem — revê-as cuidadosamente.</p>
+
+    <h2>Sites que visitas</h2>
+    <p>Os sites que abres podem tentar recolher dados sobre ti (cookies, fingerprinting, etc.). O nosso bloqueio de trackers reduz isto, mas não elimina. Usa <strong>Janela Privada</strong> para sessões verdadeiramente isoladas.</p>
+
+    <h2>Passwords</h2>
+    <p>São guardadas localmente no ficheiro <code>passwords.json</code>. Recomendamos o uso adicional de um password manager dedicado para credenciais sensíveis.</p>
+
+    <h2>Atualizações a esta política</h2>
+    <p>Alterações serão publicadas nesta página e no repositório GitHub. A versão em vigor é sempre a mais recente.</p>
+
+    <p style="margin-top: 48px; font-size: 13px; color: var(--text-muted);">Última atualização: Abril 2026</p>
+
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="assets/logo.png" alt="">
+      <span>© 2026 Zero Browser · MIT License</span>
+    </div>
+    <ul class="footer-links">
+      <li><a href="privacy.html">Privacidade</a></li>
+      <li><a href="about.html">Sobre</a></li>
+      <li><a href="https://github.com/Zero-Lta/zerobrowser" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script src="assets/main.js"></script>
+</body>
+</html>
