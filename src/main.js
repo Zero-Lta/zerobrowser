@@ -33,30 +33,28 @@ function getHostFromUrl(url) {
 }
 
 // ==========================================
-// Performance optimizations
+// Performance optimizations (safe set)
 // ==========================================
-// Enable GPU hardware acceleration (was incorrectly disabled before)
+// GPU hardware acceleration
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('enable-zero-copy');
-app.commandLine.appendSwitch('enable-accelerated-video-decode');
-app.commandLine.appendSwitch('enable-accelerated-2d-canvas');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 
-// Smooth scrolling & compositing
+// Smooth scrolling
 app.commandLine.appendSwitch('enable-smooth-scrolling');
-app.commandLine.appendSwitch('enable-features', 'CalculateNativeWinOcclusion,UseSkiaRenderer,NetworkServiceInProcess2');
 
-// Networking & caching
-app.commandLine.appendSwitch('disk-cache-size', String(512 * 1024 * 1024)); // 512 MB cache
+// Bigger disk cache for faster browsing
+app.commandLine.appendSwitch('disk-cache-size', String(512 * 1024 * 1024));
 
-// Memory / V8
-app.commandLine.appendSwitch('js-flags', '--max-old-space-size=4096 --expose-gc');
+// V8 memory
+app.commandLine.appendSwitch('js-flags', '--max-old-space-size=4096');
 
-// Disable unused features that consume resources
-app.commandLine.appendSwitch('disable-features', 'Translate,OptimizationHints,MediaRouter,DialMediaRouteProvider');
+// Disable unused features
+app.commandLine.appendSwitch('disable-features', 'Translate,OptimizationHints');
+
+// Keep background tabs responsive
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
-app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 // Data storage paths
 const userDataPath = app.getPath('userData');
@@ -269,9 +267,7 @@ function createWindow(options = {}) {
     minWidth: 800,
     minHeight: 600,
     frame: false,
-    titleBarStyle: 'hidden',
-    backgroundColor: incognito ? '#1a0f1f' : '#0a0a0f',
-    autoHideMenuBar: true,
+    backgroundColor: incognito ? '#1a0f1f' : '#0d0d10',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -286,7 +282,6 @@ function createWindow(options = {}) {
       enableWebSQL: false,
       v8CacheOptions: 'bypassHeatCheck'
     },
-    show: false,
     icon: appIcon
   });
 
@@ -303,9 +298,6 @@ function createWindow(options = {}) {
   win.loadFile(path.join(__dirname, 'renderer/index.html'), {
     query: incognito ? { incognito: '1' } : {}
   });
-
-  // Show only when ready to avoid white flash and perceived delay
-  win.once('ready-to-show', () => { win.show(); });
 
   // Set up ad blocker and tracking blocker on this session
   const ses = incognito ? session.fromPartition(partition) : session.defaultSession;
