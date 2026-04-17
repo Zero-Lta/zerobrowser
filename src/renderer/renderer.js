@@ -501,6 +501,20 @@ async function init() {
   if (aboutLogoImg && logoDataUrl) aboutLogoImg.src = logoDataUrl;
   
   loadSettings();
+
+  // Track maximized state for frameless-window CSS adjustments (Windows resize area)
+  try {
+    if (window.electronAPI) {
+      const applyMax = (m) => document.body.classList.toggle('maximized', !!m);
+      if (window.electronAPI.windowIsMaximized) {
+        applyMax(await window.electronAPI.windowIsMaximized());
+      }
+      if (window.electronAPI.onMaximizeChange) {
+        window.electronAPI.onMaximizeChange(applyMax);
+      }
+    }
+  } catch (e) {}
+
   createNewTab();
   setupEventListeners();
   setupKeyboardShortcuts();
@@ -531,7 +545,6 @@ function createNewTab(url = null) {
   
   webviewContainer.appendChild(webview);
   tabs.push(tab);
-  renderTabs();
   switchToTab(tabId);
   
   if (url) {
@@ -2007,6 +2020,13 @@ function toggleDevTools() {
   const tab = tabs.find(t => t.id === activeTabId);
   if (!tab || !tab.webview) return;
   try {
+    // Preferir IPC para abrir em modo detach (janela separada)
+    if (window.electronAPI && window.electronAPI.openWebviewDevtools) {
+      const wcId = tab.webview.getWebContentsId();
+      window.electronAPI.openWebviewDevtools(wcId);
+      return;
+    }
+    // Fallback: abre docked
     if (tab.webview.isDevToolsOpened()) {
       tab.webview.closeDevTools();
     } else {

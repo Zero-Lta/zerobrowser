@@ -128,111 +128,43 @@ button {
   overflow: hidden;
 }
 
+/* Windows esconde ~8px no topo quando frameless+maximized
+   Compensar empurrando o conteudo para baixo nessa situacao */
+body.maximized .browser-container {
+  padding-top: 8px;
+  height: calc(100vh - 0px);
+}
+
 /* ========================================
-   Tab Bar
+   Tab Bar — Clean rewrite
    ======================================== */
 .tab-bar {
   display: flex;
-  align-items: stretch;
-  background: var(--bg);
-  padding: 6px 0 0 8px;
-  height: 42px;
-  min-height: 42px;
+  align-items: center;
+  background: #1a1a20;
+  height: 40px;
+  padding: 0 4px 0 8px;
   flex-shrink: 0;
   -webkit-app-region: drag;
-  border-bottom: 1px solid var(--border);
   position: relative;
+  z-index: 100;
+  isolation: isolate;
+  transform: translateZ(0);
+  will-change: transform;
+  contain: layout paint;
 }
 
-.tab-bar button,
-.tab-bar .tab,
-.tab-bar input,
-.tab-bar .window-controls,
-.tab-bar .window-btn {
+.tab-bar > * {
   -webkit-app-region: no-drag;
 }
 
 .tab-bar-drag {
-  flex: 1 1 auto;
-  min-width: 40px;
+  flex: 1;
+  height: 100%;
   -webkit-app-region: drag;
 }
 
-/* ========================================
-   Window Controls (Minimize/Maximize/Close)
-   ======================================== */
-.window-controls {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 0 8px 0 4px;
-  flex-shrink: 0;
-  -webkit-app-region: no-drag;
-}
-
-.window-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 28px;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: background var(--transition), color var(--transition);
-  padding: 0;
-  -webkit-app-region: no-drag;
-  position: relative;
-}
-
-.window-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 8px;
-  background: currentColor;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  pointer-events: none;
-}
-
-.window-btn:hover::before {
-  opacity: 0.1;
-}
-
-.window-btn:active::before {
-  opacity: 0.18;
-}
-
-.window-btn:hover {
-  color: var(--text);
-}
-
-.window-btn.close {
-  color: var(--text-secondary);
-}
-
-.window-btn.close:hover {
-  background: #e81123;
-  color: #ffffff;
-}
-
-.window-btn.close:hover::before {
-  opacity: 0;
-}
-
-.window-btn.close:active {
-  background: #c20e1f;
-}
-
-.window-btn svg {
-  pointer-events: none;
-  position: relative;
-  z-index: 1;
-}
-
+/* --- Tabs container --- */
 .tabs-container {
   display: flex;
   flex: 0 1 auto;
@@ -240,53 +172,54 @@ button {
   overflow-x: auto;
   gap: 2px;
   scrollbar-width: none;
-  align-items: flex-end;
+  height: 100%;
+  align-items: center;
 }
 
-.tabs-container::-webkit-scrollbar {
-  display: none;
-}
+.tabs-container::-webkit-scrollbar { display: none; }
 
+/* --- Single tab --- */
 .tab {
   display: flex;
   align-items: center;
-  padding: 0 10px 0 12px;
-  height: 34px;
-  background: transparent;
-  border-radius: var(--radius) var(--radius) 0 0;
-  min-width: 140px;
-  max-width: 220px;
-  cursor: pointer;
-  transition: background var(--transition), color var(--transition);
-  position: relative;
-  user-select: none;
   gap: 8px;
+  height: 32px;
+  padding: 0 10px 0 12px;
+  min-width: 160px;
+  max-width: 220px;
+  background: #2a2a35;
+  color: #b0b0bc;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
 }
 
 .tab:hover {
-  background: var(--bg-hover);
+  background: #36363f;
+  color: #ffffff;
 }
 
 .tab.active {
-  background: var(--bg-elevated);
-  box-shadow: 0 -1px 0 var(--border) inset;
+  background: #4a4a5c;
+  color: #ffffff;
 }
 
-.tab.active::after {
-  content: '';
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 0;
-  height: 2px;
-  background: var(--accent);
-  border-radius: 2px 2px 0 0;
+.tab-title {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
+.tab.active .tab-title { font-weight: 600; }
 
 .tab-loading {
   width: 12px;
   height: 12px;
-  border: 1.5px solid var(--border-strong);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -297,33 +230,18 @@ button {
   to { transform: rotate(360deg); }
 }
 
-.tab-title {
-  flex: 1;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  letter-spacing: 0.01em;
-}
-
-.tab.active .tab-title {
-  color: var(--text);
-}
-
 .tab-close {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 18px;
   height: 18px;
-  border-radius: 4px;
   background: transparent;
   border: none;
-  color: var(--text-muted);
+  border-radius: 4px;
+  color: inherit;
+  opacity: 0.6;
   cursor: pointer;
-  transition: all var(--transition);
   padding: 0;
   font-size: 15px;
   line-height: 1;
@@ -331,34 +249,66 @@ button {
 }
 
 .tab-close:hover {
-  background: var(--bg-active);
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.15);
+  opacity: 1;
 }
 
+/* --- New tab button --- */
 .new-tab-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  align-self: center;
+  width: 28px;
+  height: 28px;
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
+  border-radius: 4px;
+  color: #b0b0bc;
   cursor: pointer;
-  transition: background var(--transition), color var(--transition), transform var(--transition);
   margin: 0 4px;
   flex-shrink: 0;
 }
 
 .new-tab-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
-.new-tab-btn:active {
-  transform: scale(0.92);
+/* --- Window controls (min / max / close) --- */
+.window-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.window-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #b0b0bc;
+  cursor: pointer;
+  padding: 0;
+}
+
+.window-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.window-btn.close:hover {
+  background: #e81123;
+  color: #ffffff;
+}
+
+.window-btn svg {
+  pointer-events: none;
 }
 
 /* ========================================
@@ -368,7 +318,7 @@ button {
   display: flex;
   align-items: center;
   padding: 8px 12px;
-  background: var(--bg-elevated);
+  background: var(--bg);
   gap: 6px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
@@ -529,6 +479,7 @@ button {
   overflow: hidden;
   position: relative;
   min-height: 0;
+  z-index: 1;
 }
 
 #webviewContainer {

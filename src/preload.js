@@ -27,6 +27,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   windowMaximize: () => ipcRenderer.invoke('window-maximize'),
   windowClose: () => ipcRenderer.invoke('window-close'),
   windowIsMaximized: () => ipcRenderer.invoke('window-is-maximized'),
+  onMaximizeChange: (callback) => {
+    ipcRenderer.on('window-maximized', (_e, maximized) => callback(maximized));
+  },
 
   // Incognito
   createIncognitoWindow: () => ipcRenderer.invoke('create-incognito-window'),
@@ -66,6 +69,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onDownloadUpdate: (callback) => {
     ipcRenderer.on('download-update', (_e, data) => callback(data));
   },
+
+  // Webview DevTools (detached)
+  openWebviewDevtools: (webContentsId) => ipcRenderer.invoke('open-webview-devtools', webContentsId),
 
   // Auto-Updater
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),

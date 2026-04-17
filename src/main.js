@@ -288,6 +288,14 @@ function createWindow(options = {}) {
   // Mark window as incognito for renderer
   win.isIncognito = incognito;
 
+  // Notify renderer on maximize/unmaximize (to adjust CSS for frameless on Windows)
+  win.on('maximize', () => {
+    try { win.webContents.send('window-maximized', true); } catch (e) {}
+  });
+  win.on('unmaximize', () => {
+    try { win.webContents.send('window-maximized', false); } catch (e) {}
+  });
+
   // Set taskbar icon explicitly (Windows)
   if (process.platform === 'win32') {
     win.setIcon(appIcon);
@@ -576,6 +584,24 @@ ipcMain.handle('updater-install', () => {
 });
 
 ipcMain.handle('get-app-version', () => app.getVersion());
+
+// Abre DevTools de um webview (por webContentsId) numa janela separada
+ipcMain.handle('open-webview-devtools', (event, webContentsId) => {
+  try {
+    const { webContents } = require('electron');
+    const wc = webContents.fromId(webContentsId);
+    if (!wc) return false;
+    if (wc.isDevToolsOpened()) {
+      wc.closeDevTools();
+    } else {
+      wc.openDevTools({ mode: 'detach' });
+    }
+    return true;
+  } catch (e) {
+    console.error('open-webview-devtools error:', e);
+    return false;
+  }
+});
 
 // App ready
 app.whenReady().then(async () => {
