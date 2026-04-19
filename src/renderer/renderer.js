@@ -2017,6 +2017,45 @@ function setupSettingsListeners() {
       }
     });
   }
+
+  // Backup / Restore
+  const exportDataBtn = document.getElementById('exportDataBtn');
+  if (exportDataBtn) {
+    exportDataBtn.addEventListener('click', async () => {
+      try {
+        const r = await window.electronAPI.exportUserData();
+        if (r && r.ok) {
+          if (typeof showToast === 'function') showToast('✅ Backup exportado');
+          else alert('Backup exportado para: ' + r.filePath);
+        } else if (r && !r.canceled) {
+          alert('Erro ao exportar: ' + (r.error || 'desconhecido'));
+        }
+      } catch (e) { alert('Erro ao exportar: ' + e.message); }
+    });
+  }
+
+  const importDataBtn = document.getElementById('importDataBtn');
+  if (importDataBtn) {
+    importDataBtn.addEventListener('click', async () => {
+      if (!confirm('Importar irá substituir bookmarks, histórico, permissões e definições atuais. Continuar?')) return;
+      try {
+        const r = await window.electronAPI.importUserData();
+        if (r && r.ok) {
+          alert('✅ Dados importados. O browser vai recarregar para aplicar.');
+          location.reload();
+        } else if (r && !r.canceled) {
+          alert('Erro ao importar: ' + (r.error || 'ficheiro inválido'));
+        }
+      } catch (e) { alert('Erro ao importar: ' + e.message); }
+    });
+  }
+
+  const openDataFolderBtn = document.getElementById('openDataFolderBtn');
+  if (openDataFolderBtn) {
+    openDataFolderBtn.addEventListener('click', () => {
+      window.electronAPI.openUserDataFolder();
+    });
+  }
 }
 
 // ========================================

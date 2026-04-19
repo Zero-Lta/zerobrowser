@@ -951,6 +951,88 @@ ipcMain.handle('create-new-window', async (event, options = {}) => {
   return win.id;
 });
 
+// ==========================================
+// Backup / Restore (exporta e importa todos os dados locais)
+// ==========================================
+function readJsonSafe(p, fallback) {
+  try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) { return fallback; }
+}
+
+ipcMain.handle('export-user-data', async (event) => {
+  try {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const { canceled, filePath } = await dialog.showSaveDialog(win, {
+      title: 'Exportar dados do Zero Browser',
+      defaultPath: `zerobrowser-backup-${new Date().toISOString().slice(0, 10)}.json`,
+      filters: [{ name: 'Zero Browser Backup', extensions: ['json'] }]
+    });
+    if (canceled || !filePath) return { ok: false, canceled: true };
+
+    const payload = {
+      app: 'ZeroBrowser',
+      version: app.getVersion(),
+      exportedAt: new Date().toISOString(),
+      data: {
+        bookmarks: readJsonSafe(bookmarksPath, []),
+        history: readJsonSafe(historyPath, []),
+        sitePermissions: readJsonSafe(permissionsPath, {}),
+        extensions: readJsonSafe(extensionsConfigPath, []),
+        downloads: readJsonSafe(downloadsHistoryPath, []),
+        stats: readJsonSafe(statsPath, {})
+      }
+    };
+
+    fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf8');
+    return { ok: true, filePath };
+  } catch (e) {
+    console.error('export-user-data error:', e);
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('import-user-data', async (event) => {
+  try {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+      title: 'Importar dados do Zero Browser',
+      filters: [{ name: 'Zero Browser Backup', extensions: ['json'] }],
+      properties: ['openFile']
+    });
+    if (canceled || !filePaths || !filePaths[0]) return { ok: false, canceled: true };
+
+    const raw = fs.readFileSync(filePaths[0], 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.app !== 'ZeroBrowser' || !parsed.data) {
+      return { ok: false, error: 'Ficheiro inválido' };
+    }
+    const d = parsed.data;
+
+    if (Array.isArray(d.bookmarks))  fs.writeFileSync(bookmarksPath, JSON.stringify(d.bookmarks, null, 2));
+    if (Array.isArray(d.history))    fs.writeFileSync(historyPath, JSON.stringify(d.history, null, 2));
+    if (d.sitePermissions && typeof d.sitePermissions === 'object') {
+      fs.writeFileSync(permissionsPath, JSON.stringify(d.sitePermissions, null, 2));
+      sitePermissions = d.sitePermissions;
+    }
+    if (Array.isArray(d.extensions)) fs.writeFileSync(extensionsConfigPath, JSON.stringify(d.extensions, null, 2));
+    if (Array.isArray(d.downloads)) {
+      downloadHistory = d.downloads;
+      saveDownloadHistory();
+    }
+    if (d.stats && typeof d.stats === 'object') {
+      fs.writeFileSync(statsPath, JSON.stringify(d.stats, null, 2));
+    }
+
+    return { ok: true, filePath: filePaths[0] };
+  } catch (e) {
+    console.error('import-user-data error:', e);
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('open-user-data-folder', () => {
+  try { shell.openPath(userDataPath); return true; } catch (e) { return false; }
+});
+
 ipcMain.handle('create-incognito-window', async () => {
   const win = createWindow({ incognito: true });
   return win.id;

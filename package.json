@@ -40,7 +40,10 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Zero Browser"
+      "shortcutName": "Zero Browser",
+      "deleteAppDataOnUninstall": false,
+      "perMachine": false,
+      "differentialPackage": true
     },
     "files": [
       "src/**/*",

@@ -78,5 +78,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updaterCheck: () => ipcRenderer.invoke('updater-check'),
   updaterDownload: () => ipcRenderer.invoke('updater-download'),
   updaterInstall: () => ipcRenderer.invoke('updater-install'),
-  onUpdaterStatus: (callback) => subscribe('updater-status', callback)
+  onUpdaterStatus: (callback) => subscribe('updater-status', callback),
+
+  // Backup / Restore
+  exportUserData: () => ipcRenderer.invoke('export-user-data'),
+  importUserData: () => ipcRenderer.invoke('import-user-data'),
+  openUserDataFolder: () => ipcRenderer.invoke('open-user-data-folder')
 });
