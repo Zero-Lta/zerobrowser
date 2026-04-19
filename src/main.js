@@ -65,7 +65,7 @@ const statsPath = path.join(userDataPath, 'stats.json');
 // ==========================================
 // Discord Telemetry (install + daily heartbeat)
 // ==========================================
-const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1494720393154400306/JgiafgNOEdY6xAYeLitsPioUHfuADcZOYWNhii1HVYXlvNwj8QsuKmc0HmjPlZECyZ-w';
+const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1495260284162408498/LA1gP4zfwJwdyDx4ApXnnHJ27M9eMtIwtI7l1N_nMcvoO-yh6RHNXvrN9AGAbi2uBgy2';
 const GITHUB_REPO = 'Zero-Lta/zerobrowser';
 
 function loadStats() {
