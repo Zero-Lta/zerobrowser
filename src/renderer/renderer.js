@@ -474,6 +474,23 @@ const homepageHTML = `
 
     searchInput.focus();
   </script>
+  <a id="zero-kofi-btn"
+     href="https://ko-fi.com/P5P41Y2RVU"
+     target="_blank"
+     rel="noopener noreferrer"
+     title="Support me on Ko-fi"
+     style="position:fixed;right:16px;bottom:16px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px;background:#29abe0;color:#ffffff;padding:10px 16px;border-radius:999px;font:600 13px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.01em;text-decoration:none;box-shadow:0 10px 24px rgba(0,0,0,0.35),0 0 0 1px rgba(255,255,255,0.08) inset;cursor:pointer;transition:transform .18s cubic-bezier(.4,0,.2,1),box-shadow .18s;">
+    <span aria-hidden="true" style="font-size:15px;line-height:1;">☕</span>
+    <span>Support me on Ko-fi</span>
+  </a>
+  <script>
+    (function(){
+      var b = document.getElementById('zero-kofi-btn');
+      if (!b) return;
+      b.addEventListener('mouseenter', function(){ b.style.transform = 'translateY(-2px)'; b.style.boxShadow = '0 14px 30px rgba(0,0,0,0.4),0 0 0 1px rgba(255,255,255,0.12) inset'; });
+      b.addEventListener('mouseleave', function(){ b.style.transform = 'none'; b.style.boxShadow = '0 10px 24px rgba(0,0,0,0.35),0 0 0 1px rgba(255,255,255,0.08) inset'; });
+    })();
+  </script>
 </body>
 </html>
 `;
@@ -528,7 +545,8 @@ function createNewTab(url = null) {
   const tabId = Date.now();
   const webview = document.createElement('webview');
   webview.setAttribute('allowpopups', 'true');
-  webview.setAttribute('webpreferences', 'contextIsolation=no, nodeIntegration=yes');
+  // SECURITY: websites correm sandbox. SEM Node, com isolation.
+  webview.setAttribute('webpreferences', 'contextIsolation=yes, nodeIntegration=no, sandbox=yes');
   
   const tab = {
     id: tabId,
@@ -546,10 +564,7 @@ function createNewTab(url = null) {
   webviewContainer.appendChild(webview);
   tabs.push(tab);
   switchToTab(tabId);
-  
-  if (url) {
-    navigateTo(url);
-  }
+  // NOTA: webview.src foi definido em setupWebviewEvents; não chamar navigateTo aqui (causava duplo load)
 }
 
 // Render tabs
@@ -569,12 +584,14 @@ function renderTabs() {
       ? `<span class="tab-audio ${tab.muted ? 'muted' : ''}" data-tab-id="${tab.id}" title="${tab.muted ? 'Reativar som' : 'Silenciar aba'}">${audioIcon}</span>`
       : '';
 
+    // SECURITY: tab.title é user-controlled (vem de page <title>) — NUNCA interpolar em innerHTML.
     tabElement.innerHTML = `
       ${tab.isLoading ? '<div class="tab-loading"></div>' : ''}
       ${audioIndicator}
-      <span class="tab-title">${tab.title}</span>
+      <span class="tab-title"></span>
       <button class="tab-close" title="Fechar aba">&times;</button>
     `;
+    tabElement.querySelector('.tab-title').textContent = tab.title || 'Nova Aba';
 
     tabElement.addEventListener('click', (e) => {
       if (e.target.closest('.tab-audio')) {
@@ -1111,11 +1128,9 @@ function setupEventListeners() {
   });
 
   ctxReload.addEventListener('click', () => {
-    if (contextMenuTabId === activeTabId) {
-      const tab = tabs.find(t => t.id === activeTabId);
-      if (tab && tab.webview) {
-        tab.webview.reload();
-      }
+    const tab = tabs.find(t => t.id === contextMenuTabId);
+    if (tab && tab.webview) {
+      tab.webview.reload();
     }
     hideContextMenu();
   });

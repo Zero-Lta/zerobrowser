@@ -1,5 +1,13 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+// Helper: subscribe to an IPC channel returning an unsubscribe function
+// Evita acumulacao de listeners quando o renderer re-subscreve
+function subscribe(channel, callback) {
+  const wrapped = (_e, ...args) => callback(...args);
+  ipcRenderer.on(channel, wrapped);
+  return () => ipcRenderer.removeListener(channel, wrapped);
+}
+
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -27,9 +35,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   windowMaximize: () => ipcRenderer.invoke('window-maximize'),
   windowClose: () => ipcRenderer.invoke('window-close'),
   windowIsMaximized: () => ipcRenderer.invoke('window-is-maximized'),
-  onMaximizeChange: (callback) => {
-    ipcRenderer.on('window-maximized', (_e, maximized) => callback(maximized));
-  },
+  onMaximizeChange: (callback) => subscribe('window-maximized', callback),
 
   // Incognito
   createIncognitoWindow: () => ipcRenderer.invoke('create-incognito-window'),
@@ -38,9 +44,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Tracker Radar
   getTrackerCount: () => ipcRenderer.invoke('get-tracker-count'),
   resetTrackerCount: () => ipcRenderer.invoke('reset-tracker-count'),
-  onTrackerBlocked: (callback) => {
-    ipcRenderer.on('tracker-blocked', (_e, data) => callback(data));
-  },
+  onTrackerBlocked: (callback) => subscribe('tracker-blocked', callback),
 
   // Extensions
   pickExtensionFolder: () => ipcRenderer.invoke('pick-extension-folder'),
@@ -52,9 +56,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSitePermissions: () => ipcRenderer.invoke('get-site-permissions'),
   setSitePermission: (host, permission, value) => ipcRenderer.invoke('set-site-permission', host, permission, value),
   clearSitePermissions: (host) => ipcRenderer.invoke('clear-site-permissions', host),
-  onPermissionRequest: (callback) => {
-    ipcRenderer.on('permission-request', (_e, data) => callback(data));
-  },
+  onPermissionRequest: (callback) => subscribe('permission-request', callback),
   respondToPermission: (id, decision) => ipcRenderer.send(id, decision),
 
   // Download Manager
@@ -66,9 +68,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   downloadOpenFile: (savePath) => ipcRenderer.invoke('download-open-file', savePath),
   downloadRemoveFromHistory: (id) => ipcRenderer.invoke('download-remove-from-history', id),
   downloadClearHistory: () => ipcRenderer.invoke('download-clear-history'),
-  onDownloadUpdate: (callback) => {
-    ipcRenderer.on('download-update', (_e, data) => callback(data));
-  },
+  onDownloadUpdate: (callback) => subscribe('download-update', callback),
 
   // Webview DevTools (detached)
   openWebviewDevtools: (webContentsId) => ipcRenderer.invoke('open-webview-devtools', webContentsId),
@@ -78,7 +78,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updaterCheck: () => ipcRenderer.invoke('updater-check'),
   updaterDownload: () => ipcRenderer.invoke('updater-download'),
   updaterInstall: () => ipcRenderer.invoke('updater-install'),
-  onUpdaterStatus: (callback) => {
-    ipcRenderer.on('updater-status', (_e, data) => callback(data));
-  }
+  onUpdaterStatus: (callback) => subscribe('updater-status', callback)
 });

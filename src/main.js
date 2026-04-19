@@ -63,10 +63,11 @@ const historyPath = path.join(userDataPath, 'history.json');
 const statsPath = path.join(userDataPath, 'stats.json');
 
 // ==========================================
-// Discord Telemetry (install + daily heartbeat)
+// Discord Telemetry (install + daily + near real-time presence)
 // ==========================================
 const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1495260284162408498/LA1gP4zfwJwdyDx4ApXnnHJ27M9eMtIwtI7l1N_nMcvoO-yh6RHNXvrN9AGAbi2uBgy2';
 const GITHUB_REPO = 'Zero-Lta/zerobrowser';
+const PRESENCE_INTERVAL_MS = 60 * 1000; // 60s
 
 function loadStats() {
   try {
@@ -99,21 +100,80 @@ async function fetchGithubDownloads() {
   } catch (e) { return null; }
 }
 
+// ------------------------------------------------------------------
+// Contador externo (abacus.jasoncameron.dev) — sem registo, sem API key
+//   hit  → incrementa e devolve o valor atual
+//   get  → apenas lê (não incrementa)
+// Usamos:
+//   zerobrowser/installs              → total de instalações únicas
+//   zerobrowser/active-<bucket5min>   → um counter por janela de 5 min
+// O "ativos agora" = valor do bucket atual (users que fizeram ping nos últimos 5 min)
+// ------------------------------------------------------------------
+const ABACUS_NS = 'zerobrowser';
+function currentActiveBucket() {
+  const d = new Date();
+  d.setUTCSeconds(0, 0);
+  const minutes = Math.floor(d.getUTCMinutes() / 5) * 5;
+  d.setUTCMinutes(minutes);
+  // e.g. active-202604191145
+  return `active-${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}${String(d.getUTCHours()).padStart(2, '0')}${String(d.getUTCMinutes()).padStart(2, '0')}`;
+}
+
+async function abacusHit(key) {
+  try {
+    const res = await fetch(`https://abacus.jasoncameron.dev/hit/${ABACUS_NS}/${encodeURIComponent(key)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data.value === 'number' ? data.value : null;
+  } catch (e) { return null; }
+}
+
+async function abacusGet(key) {
+  try {
+    const res = await fetch(`https://abacus.jasoncameron.dev/get/${ABACUS_NS}/${encodeURIComponent(key)}`);
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return typeof data.value === 'number' ? data.value : 0;
+  } catch (e) { return 0; }
+}
+
 async function sendDiscordWebhook(event, installId) {
   try {
     const gh = await fetchGithubDownloads();
-    const color = event === 'install' ? 0x10b981 : 0x6366f1;
+
+    // --- Counters externos ---
+    let totalInstalls = null;
+    let activeNow = null;
+    if (event === 'install') {
+      // Incrementa instalações únicas e lê ativos
+      totalInstalls = await abacusHit('installs');
+      activeNow = await abacusGet(currentActiveBucket());
+    } else if (event === 'presence') {
+      // Incrementa bucket de atividade 5-min
+      activeNow = await abacusHit(currentActiveBucket());
+      totalInstalls = await abacusGet('installs');
+    } else {
+      totalInstalls = await abacusGet('installs');
+      activeNow = await abacusGet(currentActiveBucket());
+    }
+
+    const color = event === 'install' ? 0x10b981 : event === 'presence' ? 0xf59e0b : 0x6366f1;
     const title = event === 'install'
       ? '🎉 Nova Instalação'
-      : '👋 Utilizador Ativo';
+      : event === 'presence'
+        ? '🟢 Utilizador Online (Tempo Real)'
+        : '👋 Utilizador Ativo';
 
     const fields = [
+      { name: '🟢 Ativos Agora (5 min)', value: activeNow != null ? String(activeNow) : '—', inline: true },
+      { name: '👥 Total Instalações', value: totalInstalls != null ? String(totalInstalls) : '—', inline: true },
       { name: 'Versão', value: `v${app.getVersion()}`, inline: true },
       { name: 'Plataforma', value: `${process.platform} · ${process.arch}`, inline: true },
-      { name: 'Install ID', value: `\`${installId.slice(0, 8)}\``, inline: true }
+      { name: 'Install ID', value: `\`${installId.slice(0, 8)}\``, inline: true },
+      { name: 'Evento', value: event, inline: true }
     ];
     if (gh) {
-      fields.push({ name: '📊 Downloads Totais', value: String(gh.total), inline: true });
+      fields.push({ name: '📊 Downloads GitHub', value: String(gh.total), inline: true });
       fields.push({ name: '🏷 Releases', value: String(gh.releases), inline: true });
     }
 
@@ -140,14 +200,21 @@ async function runTelemetry() {
   try {
     const stats = loadStats();
     const today = new Date().toISOString().slice(0, 10);
+    const now = Date.now();
 
     if (!stats.installId) {
       stats.installId = randomId();
       stats.firstRun = new Date().toISOString();
       stats.lastHeartbeat = today;
+      stats.lastPresenceAt = 0;
       saveStats(stats);
       await sendDiscordWebhook('install', stats.installId);
-      return;
+    }
+
+    if (!stats.lastPresenceAt || (now - Number(stats.lastPresenceAt)) >= PRESENCE_INTERVAL_MS) {
+      stats.lastPresenceAt = now;
+      saveStats(stats);
+      await sendDiscordWebhook('presence', stats.installId);
     }
 
     if (stats.lastHeartbeat !== today) {
@@ -156,6 +223,13 @@ async function runTelemetry() {
       await sendDiscordWebhook('heartbeat', stats.installId);
     }
   } catch (e) { /* silently fail */ }
+}
+
+function startRealtimePresenceTelemetry() {
+  // First send quickly after startup
+  setTimeout(() => { runTelemetry(); }, 3000);
+  // Then keep reporting every minute
+  setInterval(() => { runTelemetry(); }, PRESENCE_INTERVAL_MS);
 }
 
 // Ensure data directory exists
@@ -371,8 +445,8 @@ function createWindow(options = {}) {
       enableRemoteModule: false,
       preload: path.join(__dirname, 'preload.js'),
       webviewTag: true,
-      webSecurity: false,
-      allowRunningInsecureContent: true,
+      // SECURITY: webSecurity on, no insecure content (chrome UI only)
+      sandbox: false, // preload precisa de require
       partition: partition,
       backgroundThrottling: false,
       spellcheck: false,
@@ -391,6 +465,11 @@ function createWindow(options = {}) {
   });
   win.on('unmaximize', () => {
     try { win.webContents.send('window-maximized', false); } catch (e) {}
+  });
+
+  // Cleanup: evitar acumulacao de entradas em trackerCounts
+  win.on('closed', () => {
+    trackerCounts.delete(win.id);
   });
 
   // Set taskbar icon explicitly (Windows)
@@ -677,7 +756,13 @@ ipcMain.handle('updater-download', async () => {
 });
 
 ipcMain.handle('updater-install', () => {
-  autoUpdater.quitAndInstall();
+  try {
+    autoUpdater.quitAndInstall();
+    return true;
+  } catch (e) {
+    console.error('quitAndInstall error:', e);
+    return false;
+  }
 });
 
 ipcMain.handle('get-app-version', () => app.getVersion());
@@ -710,6 +795,7 @@ app.whenReady().then(async () => {
 
   // Telemetria Discord (install/heartbeat — anónimo)
   runTelemetry();
+  startRealtimePresenceTelemetry();
 
   // Load all persisted extensions into default session
   for (const extPath of [...loadedExtensions.keys()]) {
