@@ -1,0 +1,11 @@
+/* TEAM */
+Project: Zero Browser
+Site: https://zerobrowser.pt
+GitHub: https://github.com/Zero-Lta/zerobrowser
+License: MIT
+
+/* TECHNOLOGY */
+Electron, Chromium, JavaScript, HTML5, CSS3
+
+/* THANKS */
+Aos contribuidores open source e a quem acredita num browser mais privado.

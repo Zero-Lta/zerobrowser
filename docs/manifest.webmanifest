@@ -1,0 +1,15 @@
+{
+  "name": "Zero Browser",
+  "short_name": "Zero Browser",
+  "description": "Browser desktop rápido, privado e sem rastreadores para Windows. Open source.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d0d10",
+  "theme_color": "#6366f1",
+  "lang": "pt-PT",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    { "src": "assets/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -1,4 +1,26 @@
 User-agent: *
 Allow: /
+Disallow: /*.json$
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# Sem crawl-delay para bots principais — Cloudflare/GitHub Pages é rápido
+# GPTBot, Claude-Web e outros podem indexar também
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
 
 Sitemap: https://zerobrowser.pt/sitemap.xml
+Host: https://zerobrowser.pt

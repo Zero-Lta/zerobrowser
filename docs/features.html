@@ -2,16 +2,22 @@
 <html lang="pt-PT">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Funcionalidades — Zero Browser | Privacidade, Velocidade, Downloads</title>
   <meta name="description" content="Descobre todas as funcionalidades do Zero Browser: bloqueador de 70+ rastreadores, gestor de downloads, modo privado, extensões Chrome compatíveis, histórico, favoritos e mais.">
   <meta name="keywords" content="zero browser funcionalidades, browser privado windows, bloqueador rastreadores, gestor downloads, modo incognito, extensoes chrome">
   <meta name="author" content="Zero-Lta">
-  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta name="googlebot" content="index, follow">
   <meta name="theme-color" content="#6366f1">
+  <meta name="color-scheme" content="dark light">
   <link rel="canonical" href="https://zerobrowser.pt/features.html">
+  <link rel="alternate" hreflang="pt-PT" href="https://zerobrowser.pt/features.html">
+  <link rel="alternate" hreflang="x-default" href="https://zerobrowser.pt/features.html">
   <link rel="icon" type="image/png" href="assets/logo.png">
   <link rel="apple-touch-icon" href="assets/logo.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://api.github.com" crossorigin>
   <link rel="stylesheet" href="assets/style.css">
 
   <!-- Open Graph -->
@@ -28,24 +34,83 @@
   <meta name="twitter:title" content="Funcionalidades — Zero Browser">
   <meta name="twitter:description" content="Tudo o que o Zero Browser oferece: privacidade, velocidade, extensões e mais.">
   <meta name="twitter:image" content="https://zerobrowser.pt/assets/logo.png">
+
+  <!-- JSON-LD: BreadcrumbList -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Início", "item": "https://zerobrowser.pt/" },
+      { "@type": "ListItem", "position": 2, "name": "Funcionalidades", "item": "https://zerobrowser.pt/features.html" }
+    ]
+  }
+  </script>
+
+  <!-- JSON-LD: WebPage -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Funcionalidades do Zero Browser",
+    "description": "Bloqueador de 70+ rastreadores, gestor de downloads, modo privado, extensões Chrome e mais.",
+    "url": "https://zerobrowser.pt/features.html",
+    "inLanguage": "pt-PT",
+    "isPartOf": { "@type": "WebSite", "name": "Zero Browser", "url": "https://zerobrowser.pt/" }
+  }
+  </script>
 </head>
 <body>
 
-<nav class="site-nav">
+<header class="site-nav" role="banner">
   <div class="nav-inner">
-    <a href="index.html" class="nav-brand">
-      <img src="assets/logo.png" alt="Zero Browser"><span>Zero Browser</span>
+    <a href="index.html" class="nav-brand" aria-label="Zero Browser — Início">
+      <span class="nav-brand-logo">
+        <img src="assets/logo.png" alt="" width="32" height="32" loading="eager">
+      </span>
+      <span class="nav-brand-text">
+        <span class="nav-brand-name">Zero Browser</span>
+        <span class="nav-brand-tag">v<span data-version>1.3.0</span></span>
+      </span>
     </a>
-    <ul class="nav-links">
-      <li><a href="index.html">Início</a></li>
-      <li><a href="features.html">Funcionalidades</a></li>
-      <li><a href="privacy.html">Privacidade</a></li>
-      <li><a href="download.html">Download</a></li>
-      <li><a href="about.html">Sobre</a></li>
-    </ul>
-    <a href="download.html" class="nav-cta">Instalar</a>
+    <nav class="nav-links-wrap" aria-label="Navegação principal">
+      <ul class="nav-links">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="features.html">Funcionalidades</a></li>
+        <li><a href="privacy.html">Privacidade</a></li>
+        <li><a href="download.html">Download</a></li>
+        <li><a href="about.html">Sobre</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="https://github.com/Zero-Lta/zerobrowser" target="_blank" rel="noopener" class="nav-github" aria-label="Ver no GitHub">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 .5C5.65.5.5 5.65.5 12A11.5 11.5 0 008.36 23.1c.57.1.78-.25.78-.56v-2c-3.19.69-3.86-1.54-3.86-1.54-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.69 1.25 3.35.96.1-.74.4-1.25.73-1.54-2.55-.29-5.23-1.27-5.23-5.67 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.17a10.94 10.94 0 015.74 0c2.19-1.48 3.15-1.17 3.15-1.17.62 1.58.23 2.75.11 3.04.74.8 1.18 1.82 1.18 3.07 0 4.41-2.69 5.38-5.25 5.66.42.36.78 1.07.78 2.16v3.2c0 .31.2.67.79.56A11.5 11.5 0 0023.5 12C23.5 5.65 18.35.5 12 .5z"/>
+        </svg>
+        <span class="nav-github-stars" id="ghStars">★</span>
+      </a>
+      <a href="download.html" class="nav-cta">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>Instalar</span>
+      </a>
+      <button class="nav-burger" id="navBurger" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobileNav">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </div>
-</nav>
+  <div class="mobile-nav" id="mobileNav" hidden>
+    <a href="index.html">Início</a>
+    <a href="features.html">Funcionalidades</a>
+    <a href="privacy.html">Privacidade</a>
+    <a href="download.html">Download</a>
+    <a href="about.html">Sobre</a>
+    <a href="https://github.com/Zero-Lta/zerobrowser" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</header>
 
 <main>
 

@@ -367,6 +367,13 @@
             </svg>
             Privacidade
           </div>
+          <div class="settings-nav-item" data-section="protection">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6l-8-4z"></path>
+              <path d="M9 12l2 2 4-4"></path>
+            </svg>
+            Proteção
+          </div>
           <div class="settings-nav-item" data-section="startup">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -607,7 +614,157 @@
               <button class="btn-secondary" id="openDataFolderBtn">📁 Abrir pasta de dados</button>
             </div>
           </div>
-          
+
+          <!-- Proteção (Advanced Privacy Engine) -->
+          <div class="settings-section" data-section="protection">
+            <h3>Proteção</h3>
+            <div class="settings-section-desc">Motor de privacidade avançado. Bloqueia anúncios, rastreadores, mineradores, fingerprinting e muito mais — em tempo real, por categoria.</div>
+
+            <!-- Stats dashboard -->
+            <div class="protection-stats" id="protectionStats">
+              <div class="pstat"><div class="pstat-value" data-stat="ads">0</div><div class="pstat-label">Anúncios</div></div>
+              <div class="pstat"><div class="pstat-value" data-stat="trackers">0</div><div class="pstat-label">Rastreadores</div></div>
+              <div class="pstat"><div class="pstat-value" data-stat="analytics">0</div><div class="pstat-label">Analytics</div></div>
+              <div class="pstat"><div class="pstat-value" data-stat="social">0</div><div class="pstat-label">Widgets sociais</div></div>
+              <div class="pstat"><div class="pstat-value" data-stat="crypto">0</div><div class="pstat-label">Mineradores</div></div>
+              <div class="pstat"><div class="pstat-value" data-stat="fingerprint">0</div><div class="pstat-label">Fingerprint</div></div>
+              <div class="pstat"><div class="pstat-value" data-stat="cookies">0</div><div class="pstat-label">Cookies 3ºs</div></div>
+              <div class="pstat"><div class="pstat-value" data-stat="httpsUpgraded">0</div><div class="pstat-label">HTTPS forçado</div></div>
+              <div class="pstat"><div class="pstat-value" data-stat="paramsStripped">0</div><div class="pstat-label">Params limpos</div></div>
+            </div>
+
+            <h4 class="settings-subheading" style="margin-top:20px;">Bloqueio por categoria</h4>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <div class="setting-label-title">Anúncios</div>
+                <div class="setting-label-desc">Bloqueia redes de publicidade (DoubleClick, Criteo, Taboola, Outbrain…)</div>
+              </div>
+              <div class="setting-control">
+                <label class="toggle"><input type="checkbox" id="pp-blockAds" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <div class="setting-label-title">Rastreadores e Analytics</div>
+                <div class="setting-label-desc">Bloqueia Google Analytics, Hotjar, Segment, Mixpanel, Adobe, Nielsen…</div>
+              </div>
+              <div class="setting-control">
+                <label class="toggle"><input type="checkbox" id="pp-blockTrackers" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <div class="setting-label-title">Widgets sociais</div>
+                <div class="setting-label-desc">Bloqueia botões de "Gosto", widgets do Facebook, Twitter, LinkedIn, Disqus…</div>
+              </div>
+              <div class="setting-control">
+                <label class="toggle"><input type="checkbox" id="pp-blockSocial" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <div class="setting-label-title">Mineradores de crypto</div>
+                <div class="setting-label-desc">Bloqueia Coinhive, JSECoin e derivados que usam o teu CPU</div>
+              </div>
+              <div class="setting-control">
+                <label class="toggle"><input type="checkbox" id="pp-blockCryptoMining" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <div class="setting-label-title">Fingerprinting</div>
+                <div class="setting-label-desc">Bloqueia scripts que criam impressão digital única do teu browser</div>
+              </div>
+              <div class="setting-control">
+                <label class="toggle"><input type="checkbox" id="pp-blockFingerprinting" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <div class="setting-label-title">Malware e phishing</div>
+                <div class="setting-label-desc">Bloqueia domínios conhecidos de malware</div>
+              </div>
+              <div class="setting-control">
+                <label class="toggle"><input type="checkbox" id="pp-blockMalware" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <h4 class="settings-subheading" style="margin-top:24px;">Cookies e pedidos</h4>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <div class="setting-label-title">Bloquear cookies de terceiros</div>
+                <div class="setting-label-desc">Impede cookies de sites que não estás a visitar (pode quebrar alguns logins federados)</div>
+              </div>
+              <div class="setting-control">
+                <label class="toggle"><input type="checkbox" id="pp-blockThirdPartyCookies"><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <div class="setting-label-title">Remover parâmetros de rastreio do URL</div>
+                <div class="setting-label-desc">Limpa automaticamente <code>utm_*</code>, <code>fbclid</code>, <code>gclid</code>, <code>mc_eid</code>… antes de navegar</div>
+              </div>
+              <div class="setting-control">
+                <label class="toggle"><input type="checkbox" id="pp-stripTrackingParams" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <div class="setting-label-title">Forçar HTTPS</div>
+                <div class="setting-label-desc">Tenta sempre ligação segura quando um site suporta HTTPS</div>
+              </div>
+              <div class="setting-control">
+                <label class="toggle"><input type="checkbox" id="pp-upgradeToHttps" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <div class="setting-label-title">Referrer estrito</div>
+                <div class="setting-label-desc">Envia apenas a origem (não o caminho completo) no cabeçalho Referer</div>
+              </div>
+              <div class="setting-control">
+                <label class="toggle"><input type="checkbox" id="pp-strictReferrer"><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <h4 class="settings-subheading" style="margin-top:24px;">Sinais de privacidade</h4>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <div class="setting-label-title">Do Not Track (DNT)</div>
+                <div class="setting-label-desc">Envia o pedido <code>DNT: 1</code> em todos os requests</div>
+              </div>
+              <div class="setting-control">
+                <label class="toggle"><input type="checkbox" id="pp-sendDNT" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label">
+                <div class="setting-label-title">Global Privacy Control (GPC)</div>
+                <div class="setting-label-desc">Envia <code>Sec-GPC: 1</code> — obrigatório em CA/UE recusar venda de dados</div>
+              </div>
+              <div class="setting-control">
+                <label class="toggle"><input type="checkbox" id="pp-sendGPC" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px;">
+              <button class="btn-secondary" id="ppResetStatsBtn">🔄 Repor estatísticas</button>
+              <button class="btn-secondary" id="ppResetSettingsBtn">↩ Repor predefinições</button>
+            </div>
+          </div>
+
           <!-- Startup -->
           <div class="settings-section" data-section="startup">
             <h3>Início</h3>

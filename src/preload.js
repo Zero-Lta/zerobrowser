@@ -83,5 +83,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Backup / Restore
   exportUserData: () => ipcRenderer.invoke('export-user-data'),
   importUserData: () => ipcRenderer.invoke('import-user-data'),
-  openUserDataFolder: () => ipcRenderer.invoke('open-user-data-folder')
+  openUserDataFolder: () => ipcRenderer.invoke('open-user-data-folder'),
+
+  // Privacy Engine (Proteção)
+  privacyGetSettings: () => ipcRenderer.invoke('privacy-get-settings'),
+  privacySetSettings: (updates) => ipcRenderer.invoke('privacy-set-settings', updates),
+  privacyResetSettings: () => ipcRenderer.invoke('privacy-reset-settings'),
+  privacyGetStats: () => ipcRenderer.invoke('privacy-get-stats'),
+  privacyResetStats: () => ipcRenderer.invoke('privacy-reset-stats')
 });

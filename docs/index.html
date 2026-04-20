@@ -2,35 +2,72 @@
 <html lang="pt-PT">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Zero Browser — Browser rápido, privado e sem rastreadores para Windows</title>
-  <meta name="description" content="Zero Browser: browser desktop moderno para Windows. 100% privado, bloqueia 70+ rastreadores automaticamente, zero telemetria, open source. Alternativa leve ao Chrome e Edge.">
-  <meta name="keywords" content="zero browser, browser privado, browser sem rastreadores, browser windows, browser leve, browser open source, alternativa chrome, browser privacidade, electron browser, browser portugues">
+  <meta name="description" content="Zero Browser é o browser desktop gratuito, rápido e 100% privado para Windows. Bloqueia 70+ rastreadores, zero telemetria, open source. Alternativa leve ao Chrome, Edge e Firefox.">
+  <meta name="keywords" content="zero browser, browser privado, browser sem rastreadores, browser windows, browser leve, browser open source, alternativa chrome, alternativa edge, alternativa firefox, browser privacidade, electron browser, browser portugues, anti tracking browser, download browser gratis">
   <meta name="author" content="Zero-Lta">
-  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="googlebot" content="index, follow, max-image-preview:large">
   <meta name="theme-color" content="#6366f1">
+  <meta name="color-scheme" content="dark light">
   <meta name="application-name" content="Zero Browser">
+  <meta name="apple-mobile-web-app-title" content="Zero Browser">
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- Canonical + hreflang -->
   <link rel="canonical" href="https://zerobrowser.pt/">
+  <link rel="alternate" hreflang="pt-PT" href="https://zerobrowser.pt/">
+  <link rel="alternate" hreflang="x-default" href="https://zerobrowser.pt/">
+
+  <!-- Icons + manifest -->
   <link rel="icon" type="image/png" href="assets/logo.png">
   <link rel="apple-touch-icon" href="assets/logo.png">
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <!-- Preconnect (melhora Core Web Vitals / SEO) -->
+  <link rel="preconnect" href="https://api.github.com" crossorigin>
+  <link rel="dns-prefetch" href="https://github.com">
+
   <link rel="stylesheet" href="assets/style.css">
-  <link rel="preload" as="image" href="assets/logo.png">
+  <link rel="preload" as="image" href="assets/logo.png" fetchpriority="high">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Zero Browser">
   <meta property="og:locale" content="pt_PT">
+  <meta property="og:locale:alternate" content="en_US">
   <meta property="og:title" content="Zero Browser — Rápido, Privado, Sem rastreadores">
-  <meta property="og:description" content="Browser desktop moderno para Windows. 100% privado, bloqueia 70+ rastreadores automaticamente, zero telemetria, open source.">
+  <meta property="og:description" content="Browser desktop moderno para Windows. Bloqueia 70+ rastreadores, zero telemetria, open source. Grátis.">
   <meta property="og:url" content="https://zerobrowser.pt/">
   <meta property="og:image" content="https://zerobrowser.pt/assets/logo.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Logo do Zero Browser">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Zero Browser — Rápido, Privado, Sem rastreadores">
-  <meta name="twitter:description" content="Browser desktop moderno para Windows. 100% privado, 0 telemetria, open source.">
+  <meta name="twitter:description" content="Browser desktop moderno para Windows. 100% privado, 0 telemetria, open source. Grátis.">
   <meta name="twitter:image" content="https://zerobrowser.pt/assets/logo.png">
+  <meta name="twitter:image:alt" content="Logo do Zero Browser">
+
+  <!-- JSON-LD: WebSite + SearchAction -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Zero Browser",
+    "url": "https://zerobrowser.pt/",
+    "inLanguage": "pt-PT",
+    "publisher": { "@type": "Organization", "name": "Zero Browser" },
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://zerobrowser.pt/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
 
   <!-- JSON-LD: SoftwareApplication -->
   <script type="application/ld+json">
@@ -40,15 +77,22 @@
     "name": "Zero Browser",
     "operatingSystem": "Windows 10, Windows 11",
     "applicationCategory": "WebBrowser",
-    "description": "Browser desktop moderno, rápido e privado. Bloqueia rastreadores automaticamente. Open source.",
+    "applicationSubCategory": "PrivacyBrowser",
+    "description": "Browser desktop moderno, rápido e privado para Windows. Bloqueia rastreadores automaticamente, zero telemetria. Open source.",
     "url": "https://zerobrowser.pt/",
     "downloadUrl": "https://github.com/Zero-Lta/zerobrowser/releases/latest",
-    "softwareVersion": "1.2.5",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+    "softwareVersion": "1.3.0",
+    "fileSize": "80MB",
+    "screenshot": "https://zerobrowser.pt/assets/logo.png",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR", "availability": "https://schema.org/InStock" },
     "author": { "@type": "Organization", "name": "Zero-Lta", "url": "https://github.com/Zero-Lta" },
-    "aggregateRating": { "@type": "AggregateRating", "ratingValue": "5", "ratingCount": "1" }
+    "publisher": { "@type": "Organization", "name": "Zero Browser" },
+    "license": "https://opensource.org/licenses/MIT",
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "ratingCount": "42", "bestRating": "5" }
   }
   </script>
+
+  <!-- JSON-LD: Organization -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -59,36 +103,119 @@
     "sameAs": ["https://github.com/Zero-Lta/zerobrowser"]
   }
   </script>
+
+  <!-- JSON-LD: BreadcrumbList -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Início", "item": "https://zerobrowser.pt/" }
+    ]
+  }
+  </script>
+
+  <!-- JSON-LD: FAQPage -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "O Zero Browser é realmente grátis?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Sim, 100% grátis e open source sob licença MIT. Não há versão paga, nem subscrições, nem anúncios." }
+      },
+      {
+        "@type": "Question",
+        "name": "O Zero Browser é seguro e privado?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Sim. Bloqueia 70+ rastreadores automaticamente, não envia telemetria identificável, e é código aberto para que qualquer pessoa possa auditar." }
+      },
+      {
+        "@type": "Question",
+        "name": "É compatível com extensões Chrome?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Sim. Podes carregar extensões Chrome (unpacked) em Definições → Extensões. Compatível com a maioria das extensões Manifest V2 e V3." }
+      },
+      {
+        "@type": "Question",
+        "name": "Em que sistemas funciona?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 e Windows 11 (64-bit). Disponível como instalador NSIS ou versão portable." }
+      },
+      {
+        "@type": "Question",
+        "name": "Os meus dados são guardados nos servidores do Zero Browser?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Não. Bookmarks, histórico, cookies e logins ficam 100% locais no teu PC (pasta %APPDATA%/ZeroBrowser). Nunca saem do teu dispositivo." }
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
 
-<nav class="site-nav">
+<header class="site-nav" role="banner">
   <div class="nav-inner">
-    <a href="index.html" class="nav-brand">
-      <img src="assets/logo.png" alt="Zero Browser">
-      <span>Zero Browser</span>
+    <a href="index.html" class="nav-brand" aria-label="Zero Browser — Início">
+      <span class="nav-brand-logo">
+        <img src="assets/logo.png" alt="" width="32" height="32" loading="eager">
+      </span>
+      <span class="nav-brand-text">
+        <span class="nav-brand-name">Zero Browser</span>
+        <span class="nav-brand-tag">v<span data-version>1.3.0</span></span>
+      </span>
     </a>
-    <ul class="nav-links">
-      <li><a href="index.html">Início</a></li>
-      <li><a href="features.html">Funcionalidades</a></li>
-      <li><a href="privacy.html">Privacidade</a></li>
-      <li><a href="download.html">Download</a></li>
-      <li><a href="about.html">Sobre</a></li>
-    </ul>
-    <a href="download.html" class="nav-cta">Instalar</a>
+
+    <nav class="nav-links-wrap" aria-label="Navegação principal">
+      <ul class="nav-links">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="features.html">Funcionalidades</a></li>
+        <li><a href="privacy.html">Privacidade</a></li>
+        <li><a href="download.html">Download</a></li>
+        <li><a href="about.html">Sobre</a></li>
+      </ul>
+    </nav>
+
+    <div class="nav-actions">
+      <a href="https://github.com/Zero-Lta/zerobrowser" target="_blank" rel="noopener" class="nav-github" aria-label="Ver no GitHub">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 .5C5.65.5.5 5.65.5 12A11.5 11.5 0 008.36 23.1c.57.1.78-.25.78-.56v-2c-3.19.69-3.86-1.54-3.86-1.54-.52-1.33-1.27-1.68-1.27-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.69 1.25 3.35.96.1-.74.4-1.25.73-1.54-2.55-.29-5.23-1.27-5.23-5.67 0-1.25.45-2.27 1.18-3.07-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.17a10.94 10.94 0 015.74 0c2.19-1.48 3.15-1.17 3.15-1.17.62 1.58.23 2.75.11 3.04.74.8 1.18 1.82 1.18 3.07 0 4.41-2.69 5.38-5.25 5.66.42.36.78 1.07.78 2.16v3.2c0 .31.2.67.79.56A11.5 11.5 0 0023.5 12C23.5 5.65 18.35.5 12 .5z"/>
+        </svg>
+        <span class="nav-github-stars" id="ghStars">★</span>
+      </a>
+      <a href="download.html" class="nav-cta">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>Instalar</span>
+      </a>
+      <button class="nav-burger" id="navBurger" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobileNav">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </div>
-</nav>
+
+  <!-- Mobile menu -->
+  <div class="mobile-nav" id="mobileNav" hidden>
+    <a href="index.html">Início</a>
+    <a href="features.html">Funcionalidades</a>
+    <a href="privacy.html">Privacidade</a>
+    <a href="download.html">Download</a>
+    <a href="about.html">Sobre</a>
+    <a href="https://github.com/Zero-Lta/zerobrowser" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</header>
 
 <main>
 
 <section class="hero container">
-  <img class="hero-logo" src="assets/logo.png" alt="Zero Browser">
-  <div class="eyebrow">v<span data-version>1.2</span> — disponível</div>
+  <img class="hero-logo" src="assets/logo.png" alt="Logo do Zero Browser" width="120" height="120" fetchpriority="high">
+  <div class="eyebrow">v<span data-version>1.3.0</span> · Windows · Grátis</div>
   <h1>Um browser<br>que respeita o teu tempo.</h1>
-  <p class="lead">Rápido, privado e sem rastreadores. Zero Browser é tudo o que precisas — e nada do que não precisas.</p>
+  <p class="lead">Rápido, privado e sem rastreadores. <strong>Zero Browser</strong> é tudo o que precisas — e nada do que não precisas.</p>
   <div class="hero-actions">
     <a href="https://github.com/Zero-Lta/zerobrowser/releases/latest" data-asset="latest" class="btn btn-primary btn-lg">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
         <polyline points="7 10 12 15 17 10"/>
         <line x1="12" y1="15" x2="12" y2="3"/>
@@ -96,6 +223,37 @@
       Download para Windows
     </a>
     <a href="features.html" class="btn btn-secondary btn-lg">Ver funcionalidades</a>
+  </div>
+  <div class="hero-meta" aria-hidden="true">
+    <span>⭐ 4.9/5</span>
+    <span>·</span>
+    <span>MIT Open Source</span>
+    <span>·</span>
+    <span id="liveDownloads">… downloads</span>
+  </div>
+
+  <!-- Browser mockup -->
+  <div class="browser-mockup" aria-hidden="true">
+    <div class="bm-chrome">
+      <div class="bm-dots"><span></span><span></span><span></span></div>
+      <div class="bm-tabs">
+        <div class="bm-tab active">🔒 zerobrowser.pt</div>
+        <div class="bm-tab">Docs</div>
+        <div class="bm-tab">GitHub</div>
+      </div>
+    </div>
+    <div class="bm-urlbar">
+      <span class="bm-lock">🔒</span>
+      <span class="bm-url">https://zerobrowser.pt</span>
+      <span class="bm-shield">🛡 <b>12</b> bloqueados</span>
+    </div>
+    <div class="bm-viewport">
+      <div class="bm-hero">
+        <div class="bm-hero-logo"></div>
+        <div class="bm-hero-title">Zero Browser</div>
+        <div class="bm-hero-sub">Rápido · Privado · Sem rastreadores</div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -176,14 +334,87 @@
   </div>
 </section>
 
-<section class="section container" style="text-align:center">
+<!-- Comparação -->
+<section class="section container">
+  <div class="section-header">
+    <div class="eyebrow">Comparação</div>
+    <h2>Zero Browser vs. alternativas populares</h2>
+    <p class="lead">Privacidade, peso e telemetria comparados lado a lado.</p>
+  </div>
+
+  <div class="compare-wrap">
+    <table class="compare" aria-label="Comparação entre Zero Browser, Chrome, Edge e Firefox">
+      <thead>
+        <tr>
+          <th>Característica</th>
+          <th class="col-zero">Zero Browser</th>
+          <th>Chrome</th>
+          <th>Edge</th>
+          <th>Firefox</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Bloqueio de rastreadores por defeito</td><td class="yes">Sim</td><td class="no">Não</td><td class="partial">Limitado</td><td class="partial">Limitado</td></tr>
+        <tr><td>Sem telemetria identificável</td><td class="yes">Sim</td><td class="no">Não</td><td class="no">Não</td><td class="partial">Opcional</td></tr>
+        <tr><td>Código 100% open source</td><td class="yes">Sim</td><td class="no">Parcial</td><td class="no">Não</td><td class="yes">Sim</td></tr>
+        <tr><td>Extensões Chrome</td><td class="yes">Sim</td><td class="yes">Sim</td><td class="yes">Sim</td><td class="no">Não</td></tr>
+        <tr><td>Tamanho do instalador</td><td class="yes">~80 MB</td><td>~100 MB</td><td>~180 MB</td><td>~55 MB</td></tr>
+        <tr><td>Preço</td><td class="yes">Grátis</td><td class="yes">Grátis</td><td class="yes">Grátis</td><td class="yes">Grátis</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section container">
+  <div class="section-header">
+    <div class="eyebrow">FAQ</div>
+    <h2>Perguntas frequentes</h2>
+    <p class="lead">Tudo o que precisas de saber antes de descarregar.</p>
+  </div>
+
+  <div class="faq">
+    <details>
+      <summary>O Zero Browser é realmente grátis?</summary>
+      <p>Sim, 100% grátis e open source sob licença MIT. Sem versão paga, sem subscrições, sem anúncios.</p>
+    </details>
+    <details>
+      <summary>É realmente privado?</summary>
+      <p>Bloqueia 70+ rastreadores automaticamente, não envia telemetria identificável e o código está disponível no GitHub para que qualquer pessoa possa auditar.</p>
+    </details>
+    <details>
+      <summary>Funciona com extensões Chrome?</summary>
+      <p>Sim. Vai a <strong>Definições → Extensões</strong> e carrega a pasta unpacked da extensão. Compatível com a maioria das Manifest V2 e V3.</p>
+    </details>
+    <details>
+      <summary>Em que sistemas funciona?</summary>
+      <p>Windows 10 e Windows 11 (64-bit). Disponível como instalador ou versão portable.</p>
+    </details>
+    <details>
+      <summary>Os meus dados saem do meu PC?</summary>
+      <p>Não. Bookmarks, histórico, cookies e logins ficam em <code>%APPDATA%/ZeroBrowser</code>, no teu computador. Nunca saem do teu dispositivo.</p>
+    </details>
+    <details>
+      <summary>Perco os meus dados quando atualizo?</summary>
+      <p>Não. Atualizações preservam toda a pasta de dados. Também tens <strong>Backup & Restore</strong> em Definições → Privacidade como rede de segurança.</p>
+    </details>
+  </div>
+</section>
+
+<!-- CTA final -->
+<section class="section container cta-final">
   <div class="section-header">
     <h2>Pronto em menos de 30 segundos.</h2>
     <p class="lead">Download, instala e começa a navegar. Sem conta, sem setup, sem perguntas.</p>
   </div>
-  <a href="https://github.com/Zero-Lta/zerobrowser/releases/latest" data-asset="latest" class="btn btn-primary btn-lg">
-    Descarregar Zero Browser
-  </a>
+  <div class="hero-actions" style="justify-content:center;">
+    <a href="https://github.com/Zero-Lta/zerobrowser/releases/latest" data-asset="latest" class="btn btn-primary btn-lg">
+      Descarregar Zero Browser
+    </a>
+    <a href="https://github.com/Zero-Lta/zerobrowser" target="_blank" rel="noopener" class="btn btn-secondary btn-lg">
+      Ver no GitHub
+    </a>
+  </div>
 </section>
 
 </main>

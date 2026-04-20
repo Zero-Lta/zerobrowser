@@ -2056,6 +2056,117 @@ function setupSettingsListeners() {
       window.electronAPI.openUserDataFolder();
     });
   }
+
+  // -----------------------------------------------------
+  // Proteção (Advanced Privacy Engine)
+  // -----------------------------------------------------
+  setupProtectionTab();
+}
+
+// ========================================
+// Proteção (Advanced Privacy Engine)
+// ========================================
+const PROTECTION_KEYS = [
+  'blockAds', 'blockTrackers', 'blockSocial', 'blockCryptoMining',
+  'blockFingerprinting', 'blockMalware', 'blockThirdPartyCookies',
+  'stripTrackingParams', 'upgradeToHttps', 'sendDNT', 'sendGPC', 'strictReferrer'
+];
+
+let protectionStatsTimer = null;
+
+async function hydrateProtectionSettings() {
+  if (!window.electronAPI || !window.electronAPI.privacyGetSettings) return;
+  try {
+    const s = await window.electronAPI.privacyGetSettings();
+    if (!s) return;
+    PROTECTION_KEYS.forEach(k => {
+      const el = document.getElementById('pp-' + k);
+      if (el && typeof s[k] === 'boolean') el.checked = s[k];
+    });
+  } catch (e) { /* ignore */ }
+}
+
+async function hydrateProtectionStats() {
+  if (!window.electronAPI || !window.electronAPI.privacyGetStats) return;
+  try {
+    const stats = await window.electronAPI.privacyGetStats();
+    if (!stats) return;
+    document.querySelectorAll('.pstat-value[data-stat]').forEach(el => {
+      const key = el.dataset.stat;
+      if (stats[key] != null) {
+        el.textContent = Number(stats[key]).toLocaleString('pt-PT');
+      }
+    });
+  } catch (e) { /* ignore */ }
+}
+
+function setupProtectionTab() {
+  if (!window.electronAPI || !window.electronAPI.privacySetSettings) return;
+
+  // Wire each toggle
+  PROTECTION_KEYS.forEach(k => {
+    const el = document.getElementById('pp-' + k);
+    if (!el) return;
+    el.addEventListener('change', async () => {
+      try {
+        await window.electronAPI.privacySetSettings({ [k]: el.checked });
+        if (typeof showToast === 'function') {
+          showToast(el.checked ? `✅ ${k} ativado` : `⛔ ${k} desativado`);
+        }
+      } catch (e) { console.error('privacy save failed', e); }
+    });
+  });
+
+  // Reset stats
+  const resetStatsBtn = document.getElementById('ppResetStatsBtn');
+  if (resetStatsBtn) {
+    resetStatsBtn.addEventListener('click', async () => {
+      await window.electronAPI.privacyResetStats();
+      hydrateProtectionStats();
+      if (typeof showToast === 'function') showToast('Estatísticas repostas');
+    });
+  }
+
+  // Reset settings to defaults
+  const resetSettingsBtn = document.getElementById('ppResetSettingsBtn');
+  if (resetSettingsBtn) {
+    resetSettingsBtn.addEventListener('click', async () => {
+      if (!confirm('Repor todas as definições de proteção para os valores predefinidos?')) return;
+      await window.electronAPI.privacyResetSettings();
+      await hydrateProtectionSettings();
+      if (typeof showToast === 'function') showToast('Predefinições repostas');
+    });
+  }
+
+  // When Proteção tab is shown, refresh stats + poll while visible
+  const protectionNav = document.querySelector('.settings-nav-item[data-section="protection"]');
+  if (protectionNav) {
+    protectionNav.addEventListener('click', () => {
+      hydrateProtectionSettings();
+      hydrateProtectionStats();
+      if (protectionStatsTimer) clearInterval(protectionStatsTimer);
+      protectionStatsTimer = setInterval(hydrateProtectionStats, 2000);
+    });
+  }
+
+  // Stop polling when settings modal closes
+  const closeBtn = document.getElementById('closeSettingsModal');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      if (protectionStatsTimer) { clearInterval(protectionStatsTimer); protectionStatsTimer = null; }
+    });
+  }
+  const modal = document.getElementById('settingsModal');
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal && protectionStatsTimer) {
+        clearInterval(protectionStatsTimer); protectionStatsTimer = null;
+      }
+    });
+  }
+
+  // Initial hydrate (so values are correct even before first open)
+  hydrateProtectionSettings();
 }
 
 // ========================================

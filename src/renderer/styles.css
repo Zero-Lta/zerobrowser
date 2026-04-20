@@ -836,6 +836,57 @@ body.maximized .browser-container {
   margin-bottom: 20px;
 }
 
+/* Protection stats dashboard */
+.protection-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+  margin: 16px 0 8px;
+  padding: 14px;
+  background: var(--bg-secondary, rgba(255,255,255,0.02));
+  border: 1px solid var(--border, rgba(255,255,255,0.06));
+  border-radius: 10px;
+}
+.pstat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 8px;
+  border-radius: 8px;
+  background: var(--bg, rgba(255,255,255,0.015));
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.pstat:hover {
+  background: rgba(99, 102, 241, 0.08);
+  transform: translateY(-1px);
+}
+.pstat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent, #6366f1);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.pstat-label {
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+/* Inline code in setting-label-desc */
+.setting-label-desc code {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  padding: 1px 5px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 4px;
+  color: var(--accent, #6366f1);
+}
+
 .setting-item {
   display: flex;
   align-items: center;

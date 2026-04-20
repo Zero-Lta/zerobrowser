@@ -245,23 +245,185 @@ if (!fs.existsSync(historyPath)) {
   fs.writeFileSync(historyPath, JSON.stringify([], null, 2));
 }
 
-// Ad blocker filter list (basic)
-const adBlockFilters = [
-  '*://*.doubleclick.net/*',
-  '*://*.googleadservices.com/*',
-  '*://*.googlesyndication.com/*',
-  '*://*.facebook.com/tr*',
-  '*://*.amazon-adsystem.com/*',
-  '*://*.ads.twitter.com/*',
-  '*://*.advertising.com/*',
-  '*://*.adsystem.com/*',
-  '*://*.adnxs.com/*',
-  '*://*.outbrain.com/*',
-  '*://*.taboola.com/*'
-];
+// ==========================================
+// Privacy Engine (categorized blocking)
+// ==========================================
+const privacySettingsPath = path.join(userDataPath, 'privacy-settings.json');
 
-// Tracking blocker filter list
-const trackingBlockFilters = [
+const DEFAULT_PRIVACY_SETTINGS = {
+  blockAds: true,
+  blockTrackers: true,
+  blockAnalytics: true,
+  blockSocial: true,
+  blockCryptoMining: true,
+  blockFingerprinting: true,
+  blockMalware: true,
+  blockThirdPartyCookies: false,
+  stripTrackingParams: true,
+  upgradeToHttps: true,
+  sendDNT: true,
+  sendGPC: true,
+  strictReferrer: false
+};
+
+let privacySettings = { ...DEFAULT_PRIVACY_SETTINGS };
+
+// Per-category blocked counters (global, across all tabs)
+const blockedStats = {
+  ads: 0, trackers: 0, analytics: 0, social: 0,
+  crypto: 0, fingerprint: 0, malware: 0, cookies: 0,
+  httpsUpgraded: 0, paramsStripped: 0
+};
+
+function loadPrivacySettings() {
+  try {
+    if (fs.existsSync(privacySettingsPath)) {
+      privacySettings = { ...DEFAULT_PRIVACY_SETTINGS, ...JSON.parse(fs.readFileSync(privacySettingsPath, 'utf8')) };
+    }
+  } catch (e) { privacySettings = { ...DEFAULT_PRIVACY_SETTINGS }; }
+}
+function savePrivacySettings() {
+  try { fs.writeFileSync(privacySettingsPath, JSON.stringify(privacySettings, null, 2)); } catch (e) {}
+}
+
+// ---- Hostname blocklists (suffix match) ----
+// Each Set contains hostnames; a request is blocked if its hostname equals
+// any entry or ends with ".entry".
+const BLOCKLIST = {
+  ads: new Set([
+    'doubleclick.net', 'googleadservices.com', 'googlesyndication.com',
+    'amazon-adsystem.com', 'advertising.com', 'adsystem.amazon.com',
+    'adnxs.com', 'outbrain.com', 'taboola.com', 'criteo.com', 'criteo.net',
+    'rubiconproject.com', 'pubmatic.com', 'openx.net', 'adform.net',
+    'adroll.com', 'mediavine.com', 'ezoic.com', 'ads.yahoo.com',
+    'ads.twitter.com', 'ads.linkedin.com', 'ads.pinterest.com',
+    'ads.tiktok.com', 'ads.reddit.com', 'moatads.com', 'contextweb.com',
+    'smartadserver.com', 'casalemedia.com', 'adsrvr.org', 'bidswitch.net',
+    'yieldmo.com', 'indexexchange.com', 'sharethrough.com'
+  ]),
+  trackers: new Set([
+    'scorecardresearch.com', 'quantserve.com', 'quantcount.com',
+    'comscore.com', 'nielsen.com', 'chartbeat.com', 'chartbeat.net',
+    'bounceexchange.com', 'crazyegg.com', 'inspectlet.com',
+    'luckyorange.com', 'mouseflow.com', 'smartlook.com',
+    'clicktale.com', 'userzoom.com', 'qualtrics.com',
+    'demdex.net', 'everesttech.net', 'omtrdc.net', 'tubemogul.com',
+    'adobedtm.com', 'tealiumiq.com', 'tiqcdn.com', 'ensighten.com',
+    'krxd.net', 'rlcdn.com', 'liadm.com', 'agkn.com',
+    'monetate.net', 'bluekai.com'
+  ]),
+  analytics: new Set([
+    'google-analytics.com', 'googletagmanager.com', 'googletagservices.com',
+    'stats.g.doubleclick.net', 'analytics.twitter.com',
+    'bat.bing.com', 'c.bing.com', 'analytics.yahoo.com',
+    'mixpanel.com', 'amplitude.com', 'segment.io', 'cdn.segment.com',
+    'api.segment.io', 'heap.io', 'heapanalytics.com',
+    'hotjar.com', 'static.hotjar.com', 'clarity.ms',
+    'optimizely.com', 'vwo.com', 'fullstory.com', 'logrocket.com',
+    'pendo.io', 'matomo.cloud', 'plausible.io',
+    'pixel.wp.com', 'stats.wp.com', 'sentry.io', 'bugsnag.com',
+    'newrelic.com', 'nr-data.net', 'trackjs.com'
+  ]),
+  social: new Set([
+    'connect.facebook.net', 'platform.twitter.com', 'syndication.twitter.com',
+    'platform.linkedin.com', 'snap.licdn.com', 'px.ads.linkedin.com',
+    'assets.pinterest.com', 'ct.pinterest.com', 's.pinimg.com',
+    'widgets.pinterest.com', 'platform.instagram.com',
+    'analytics.tiktok.com', 'business-api.tiktok.com',
+    'widget.disqus.com', 'referrer.disqus.com',
+    'platform-api.sharethis.com', 'buttons-config.sharethis.com',
+    'w.sharethis.com', 'addthis.com', 's7.addthis.com'
+  ]),
+  crypto: new Set([
+    'coinhive.com', 'coin-hive.com', 'authedmine.com', 'jsecoin.com',
+    'crypto-loot.com', 'cryptaloot.pro', 'webminerpool.com',
+    'coinimp.com', 'monerominer.rocks', 'coinpot.co',
+    'deepminer.com', 'minero.cc', 'minero.pw', 'minero-proxy.sh',
+    'cryptonight.wasm', 'load.jsecoin.com', 'reasedoper.pw'
+  ]),
+  fingerprint: new Set([
+    'fingerprintjs.com', 'fpjs.io', 'fpjs.sh',
+    'fingerprint.com', 'api.fpjs.io',
+    'iovation.com', 'mpsnare.iesnare.com',
+    'threatmetrix.com', 'online-metrix.net',
+    'maxmind.com', 'js.maxmind.com',
+    'augur.io', 'client.augur.io',
+    'perimeterx.com', 'perimeterx.net',
+    'distilnetworks.com', 'd1lq13fjc4tnw6.cloudfront.net'
+  ]),
+  malware: new Set([
+    'malwarebytes-.com', 'phishing-examples.xyz',
+    'cdn.taboola.com.phish', 'tracking-virus.net'
+  ])
+};
+
+// Flattened lookup: host (without www) → array of categories it belongs to
+function matchCategory(host) {
+  const h = host.replace(/^www\./, '').toLowerCase();
+  for (const cat of Object.keys(BLOCKLIST)) {
+    const set = BLOCKLIST[cat];
+    // Walk up subdomain chain: foo.bar.example.com → bar.example.com → example.com
+    let cur = h;
+    while (cur) {
+      if (set.has(cur)) return cat;
+      const dot = cur.indexOf('.');
+      if (dot === -1) break;
+      cur = cur.slice(dot + 1);
+    }
+  }
+  return null;
+}
+
+// URL tracking params to strip (before request)
+const TRACKING_PARAMS = new Set([
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+  'utm_name', 'utm_id', 'utm_source_platform', 'utm_creative_format',
+  'fbclid', 'gclid', 'gclsrc', 'dclid', 'msclkid', 'yclid',
+  'igshid', 'mc_cid', 'mc_eid', '_hsenc', '_hsmi', 'hsCtaTracking',
+  'oly_anon_id', 'oly_enc_id', 'wickedid', 'wt_mc', 'mkt_tok',
+  'ga_source', 'ga_medium', 'ga_campaign', 'ref', 'referrer',
+  's_cid', 'vero_conv', 'vero_id', 'pk_campaign', 'pk_kwd',
+  '_openstat', 'action_object_map', 'action_type_map', 'action_ref_map',
+  'fb_action_ids', 'fb_action_types', 'fb_source', 'fb_ref',
+  'trk_contact', 'trk_msg', 'trk_module', 'trk_sid'
+]);
+
+function stripTrackingParams(urlStr) {
+  try {
+    const u = new URL(urlStr);
+    let changed = false;
+    const keysToDelete = [];
+    u.searchParams.forEach((_, key) => {
+      if (TRACKING_PARAMS.has(key) || /^utm_/i.test(key)) {
+        keysToDelete.push(key);
+      }
+    });
+    keysToDelete.forEach(k => { u.searchParams.delete(k); changed = true; });
+    return changed ? u.toString() : null;
+  } catch (e) { return null; }
+}
+
+// Hosts where HTTPS upgrade MUST be skipped (local / IP literals)
+function isLocalHost(host) {
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1'
+    || /^192\.168\./.test(host) || /^10\./.test(host) || /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+    || /^\[/.test(host);
+}
+
+function getHostSafe(url) {
+  try { return new URL(url).hostname.toLowerCase(); } catch (e) { return ''; }
+}
+
+function getETLDPlus1(host) {
+  // Simplified eTLD+1: take last two labels (sufficient for 3rd-party cookie detection in most cases)
+  const parts = host.split('.');
+  if (parts.length <= 2) return host;
+  return parts.slice(-2).join('.');
+}
+
+// Legacy arrays kept only for backward compatibility (no longer used)
+const adBlockFilters = [];
+const trackingBlockFilters = []; const _LEGACY_TRACKING_UNUSED = [
   '*://*.google-analytics.com/*',
   '*://*.googletagmanager.com/*',
   '*://*.googletagservices.com/*',
@@ -342,31 +504,137 @@ const appIcon = nativeImage.createFromPath(path.join(__dirname, '../assets/logo.
 
 // Setup blocking + tracker counting on a given session
 const configuredSessions = new WeakSet();
+
+// Map category → privacySettings flag
+const CATEGORY_TO_FLAG = {
+  ads: 'blockAds',
+  trackers: 'blockTrackers',
+  analytics: 'blockTrackers', // analytics também conta como tracker
+  social: 'blockSocial',
+  crypto: 'blockCryptoMining',
+  fingerprint: 'blockFingerprinting',
+  malware: 'blockMalware'
+};
+
 function setupSessionBlocking(ses, windowId) {
   if (configuredSessions.has(ses)) return;
   configuredSessions.add(ses);
-  
-  const allFilters = [...adBlockFilters, ...trackingBlockFilters];
-  ses.webRequest.onBeforeRequest({ urls: allFilters }, (details, callback) => {
-    // Increment tracker counter for window
-    if (windowId != null) {
-      const c = trackerCounts.get(windowId) || 0;
-      trackerCounts.set(windowId, c + 1);
-      const win = BrowserWindow.fromId(windowId);
-      if (win && !win.isDestroyed()) {
-        win.webContents.send('tracker-blocked', { count: c + 1, url: details.url });
+
+  // ---------- 1. onBeforeRequest: block, upgrade http→https, strip URL params ----------
+  ses.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (details, callback) => {
+    const url = details.url;
+    const host = getHostSafe(url);
+    if (!host) return callback({});
+
+    // HTTPS upgrade (only top-level navigations & subframes; skip local hosts)
+    if (privacySettings.upgradeToHttps && url.startsWith('http://') && !isLocalHost(host)) {
+      blockedStats.httpsUpgraded++;
+      return callback({ redirectURL: 'https://' + url.slice(7) });
+    }
+
+    // Strip tracking params from top-level navigations
+    if (privacySettings.stripTrackingParams && details.resourceType === 'mainFrame' && details.method === 'GET') {
+      const cleaned = stripTrackingParams(url);
+      if (cleaned && cleaned !== url) {
+        blockedStats.paramsStripped++;
+        return callback({ redirectURL: cleaned });
       }
     }
-    callback({ cancel: true });
+
+    // Categorized blocking
+    const category = matchCategory(host);
+    if (category) {
+      const flag = CATEGORY_TO_FLAG[category];
+      if (flag && privacySettings[flag]) {
+        blockedStats[category] = (blockedStats[category] || 0) + 1;
+        // Global counter (legacy) + per-window UI feedback
+        if (windowId != null) {
+          const c = (trackerCounts.get(windowId) || 0) + 1;
+          trackerCounts.set(windowId, c);
+          const win = BrowserWindow.fromId(windowId);
+          if (win && !win.isDestroyed()) {
+            win.webContents.send('tracker-blocked', { count: c, url, category });
+          }
+        }
+        return callback({ cancel: true });
+      }
+    }
+
+    callback({});
   });
 
-  ses.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': ['default-src * \'unsafe-inline\' \'unsafe-eval\' data: blob:']
+  // ---------- 2. onBeforeSendHeaders: DNT, GPC, 3rd-party cookies, referrer ----------
+  ses.webRequest.onBeforeSendHeaders((details, callback) => {
+    const headers = { ...details.requestHeaders };
+
+    if (privacySettings.sendDNT) headers['DNT'] = '1';
+    if (privacySettings.sendGPC) headers['Sec-GPC'] = '1';
+
+    // Strip third-party cookies (compare request's eTLD+1 vs initiator origin)
+    if (privacySettings.blockThirdPartyCookies && (headers['Cookie'] || headers['cookie'])) {
+      try {
+        const reqHost = getHostSafe(details.url);
+        const reqBase = getETLDPlus1(reqHost);
+        let initiatorHost = '';
+        if (details.webContentsId != null) {
+          const wc = require('electron').webContents.fromId(details.webContentsId);
+          if (wc && !wc.isDestroyed()) {
+            initiatorHost = getHostSafe(wc.getURL());
+          }
+        }
+        if (initiatorHost) {
+          const initiatorBase = getETLDPlus1(initiatorHost);
+          if (initiatorBase && reqBase && initiatorBase !== reqBase) {
+            delete headers['Cookie'];
+            delete headers['cookie'];
+            blockedStats.cookies++;
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    // Strict referrer: only send origin, not full path
+    if (privacySettings.strictReferrer) {
+      const ref = headers['Referer'] || headers['referer'];
+      if (ref) {
+        try {
+          const u = new URL(ref);
+          const originOnly = u.origin + '/';
+          headers['Referer'] = originOnly;
+          if (headers['referer']) headers['referer'] = originOnly;
+        } catch (e) { /* ignore */ }
       }
-    });
+    }
+
+    callback({ requestHeaders: headers });
+  });
+
+  // ---------- 3. onHeadersReceived: strip Set-Cookie on 3rd-party, permissive CSP for chrome UI ----------
+  ses.webRequest.onHeadersReceived((details, callback) => {
+    const responseHeaders = { ...details.responseHeaders };
+
+    if (privacySettings.blockThirdPartyCookies) {
+      try {
+        const reqHost = getHostSafe(details.url);
+        const reqBase = getETLDPlus1(reqHost);
+        let initiatorHost = '';
+        if (details.webContentsId != null) {
+          const wc = require('electron').webContents.fromId(details.webContentsId);
+          if (wc && !wc.isDestroyed()) {
+            initiatorHost = getHostSafe(wc.getURL());
+          }
+        }
+        if (initiatorHost) {
+          const initiatorBase = getETLDPlus1(initiatorHost);
+          if (initiatorBase && reqBase && initiatorBase !== reqBase) {
+            delete responseHeaders['set-cookie'];
+            delete responseHeaders['Set-Cookie'];
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    callback({ responseHeaders });
   });
   
   // Permission request handler (camera, mic, geolocation, notifications)
@@ -787,6 +1055,7 @@ ipcMain.handle('open-webview-devtools', (event, webContentsId) => {
 
 // App ready
 app.whenReady().then(async () => {
+  loadPrivacySettings();
   loadSitePermissions();
   loadPersistedExtensions();
   loadDownloadHistory();
@@ -1041,6 +1310,40 @@ ipcMain.handle('create-incognito-window', async () => {
 ipcMain.handle('is-incognito', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   return win ? !!win.isIncognito : false;
+});
+
+// ==========================================
+// Privacy settings IPC
+// ==========================================
+ipcMain.handle('privacy-get-settings', () => {
+  return { ...privacySettings };
+});
+
+ipcMain.handle('privacy-set-settings', (_event, updates) => {
+  if (!updates || typeof updates !== 'object') return { ok: false };
+  // Only accept known keys
+  for (const k of Object.keys(updates)) {
+    if (k in DEFAULT_PRIVACY_SETTINGS) {
+      privacySettings[k] = !!updates[k];
+    }
+  }
+  savePrivacySettings();
+  return { ok: true, settings: { ...privacySettings } };
+});
+
+ipcMain.handle('privacy-reset-settings', () => {
+  privacySettings = { ...DEFAULT_PRIVACY_SETTINGS };
+  savePrivacySettings();
+  return { ...privacySettings };
+});
+
+ipcMain.handle('privacy-get-stats', () => {
+  return { ...blockedStats };
+});
+
+ipcMain.handle('privacy-reset-stats', () => {
+  for (const k of Object.keys(blockedStats)) blockedStats[k] = 0;
+  return { ...blockedStats };
 });
 
 // Tracker Radar
