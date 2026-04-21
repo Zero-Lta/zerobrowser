@@ -322,15 +322,28 @@ const homepageHTML = `
       font-weight: 700;
       color: #ffffff;
       letter-spacing: -0.5px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+      background: transparent;
+      box-shadow: none;
+      overflow: hidden;
     }
 
-    .ql-google { background: linear-gradient(135deg, #4285f4, #34a853); }
-    .ql-youtube { background: linear-gradient(135deg, #ff0000, #cc0000); }
-    .ql-github { background: linear-gradient(135deg, #333333, #000000); border: 1px solid rgba(255,255,255,0.2); }
-    .ql-twitter { background: linear-gradient(135deg, #1da1f2, #0d8bd9); }
-    .ql-reddit { background: linear-gradient(135deg, #ff4500, #ff6314); }
-    .ql-linkedin { background: linear-gradient(135deg, #0077b5, #00669c); }
+    .quick-link-icon img {
+      width: 26px;
+      height: 26px;
+      object-fit: contain;
+      display: block;
+      filter: none;
+    }
+
+    .ql-google,
+    .ql-youtube,
+    .ql-github,
+    .ql-twitter,
+    .ql-reddit,
+    .ql-linkedin {
+      background: transparent;
+      border: none;
+    }
 
     .quick-link-title {
       font-size: 11.5px;
@@ -402,27 +415,27 @@ const homepageHTML = `
     
     <div class="quick-links">
       <div class="quick-link" data-url="https://www.google.com">
-        <div class="quick-link-icon ql-google">G</div>
+        <div class="quick-link-icon ql-google"><img src="https://www.google.com/s2/favicons?domain=google.com&sz=64" alt="Google"></div>
         <div class="quick-link-title">Google</div>
       </div>
       <div class="quick-link" data-url="https://www.youtube.com">
-        <div class="quick-link-icon ql-youtube">▶</div>
+        <div class="quick-link-icon ql-youtube"><img src="https://www.google.com/s2/favicons?domain=youtube.com&sz=64" alt="YouTube"></div>
         <div class="quick-link-title">YouTube</div>
       </div>
       <div class="quick-link" data-url="https://github.com">
-        <div class="quick-link-icon ql-github">GH</div>
+        <div class="quick-link-icon ql-github"><img src="https://cdn.simpleicons.org/github/ffffff" alt="GitHub"></div>
         <div class="quick-link-title">GitHub</div>
       </div>
       <div class="quick-link" data-url="https://twitter.com">
-        <div class="quick-link-icon ql-twitter">𝕏</div>
+        <div class="quick-link-icon ql-twitter"><img src="https://www.google.com/s2/favicons?domain=x.com&sz=64" alt="Twitter X"></div>
         <div class="quick-link-title">Twitter</div>
       </div>
       <div class="quick-link" data-url="https://www.reddit.com">
-        <div class="quick-link-icon ql-reddit">R</div>
+        <div class="quick-link-icon ql-reddit"><img src="https://www.google.com/s2/favicons?domain=reddit.com&sz=64" alt="Reddit"></div>
         <div class="quick-link-title">Reddit</div>
       </div>
       <div class="quick-link" data-url="https://www.linkedin.com">
-        <div class="quick-link-icon ql-linkedin">in</div>
+        <div class="quick-link-icon ql-linkedin"><img src="https://www.google.com/s2/favicons?domain=linkedin.com&sz=64" alt="LinkedIn"></div>
         <div class="quick-link-title">LinkedIn</div>
       </div>
     </div>
@@ -501,6 +514,13 @@ let logoDataUrl = '';
 function getHomepageUrl() {
   const html = homepageHTML.replace(/{{LOGO}}/g, logoDataUrl || '');
   return 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+}
+
+function formatUrlForDisplay(url) {
+  if (!url || typeof url !== 'string') return '';
+  if (url.startsWith('data:')) return '';
+  if (url === 'about:blank') return '';
+  return url;
 }
 
 // Initialize
@@ -701,7 +721,7 @@ function setupWebviewEvents(webview, tab) {
       tab.isLoading = false;
       tab.url = webview.src;
       tab.lastActive = Date.now();
-      urlBar.value = webview.src;
+      urlBar.value = formatUrlForDisplay(webview.src);
       updateBookmarkButton(webview.src);
       updateSecurityIndicator(webview.src);
       renderTabs();
@@ -722,7 +742,7 @@ function setupWebviewEvents(webview, tab) {
   webview.addEventListener('did-navigate', (e) => {
     if (tab.id === activeTabId) {
       tab.url = e.url;
-      urlBar.value = e.url;
+      urlBar.value = formatUrlForDisplay(e.url);
       updateBookmarkButton(e.url);
       updateSecurityIndicator(e.url);
     }
@@ -798,7 +818,7 @@ function switchToTab(tabId) {
       tab.webview.classList.add('active');
     }
     
-    urlBar.value = tab.url === getHomepageUrl() || tab.url.startsWith('data:text/html') ? '' : tab.url;
+    urlBar.value = formatUrlForDisplay(tab.url);
     updateBookmarkButton(tab.url);
     updateSecurityIndicator(tab.url);
     renderTabs();

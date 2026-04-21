@@ -16,20 +16,102 @@ const extensionsConfigPath = path.join(app.getPath('userData'), 'extensions.json
 
 // Site permissions: { "host": { "camera": "allow"|"deny"|"ask", "microphone": ..., "geolocation": ..., "notifications": ... } }
 const permissionsPath = path.join(app.getPath('userData'), 'site-permissions.json');
-let sitePermissions = {};
+let sitePermissions = Object.create(null);
+
+const ALLOWED_PERMISSION_VALUES = new Set(['allow', 'deny', 'ask']);
+const ALLOWED_PERMISSION_KEYS = new Set([
+  'media', 'camera', 'microphone', 'geolocation', 'notifications',
+  'fullscreen', 'pointerLock', 'midi', 'midiSysex',
+  'clipboard-read', 'clipboard-sanitized-write'
+]);
 
 function loadSitePermissions() {
   try {
     if (fs.existsSync(permissionsPath)) {
-      sitePermissions = JSON.parse(fs.readFileSync(permissionsPath, 'utf8'));
+      const raw = JSON.parse(fs.readFileSync(permissionsPath, 'utf8'));
+      sitePermissions = sanitizeSitePermissions(raw);
     }
-  } catch (e) { sitePermissions = {}; }
+  } catch (e) { sitePermissions = Object.create(null); }
 }
 function saveSitePermissions() {
   try { fs.writeFileSync(permissionsPath, JSON.stringify(sitePermissions, null, 2)); } catch (e) {}
 }
 function getHostFromUrl(url) {
   try { return new URL(url).hostname; } catch (e) { return ''; }
+}
+
+function normalizeHost(hostLike) {
+  if (!hostLike || typeof hostLike !== 'string') return '';
+  const trimmed = hostLike.trim().toLowerCase();
+  if (!trimmed) return '';
+
+  let host = trimmed;
+  try {
+    if (trimmed.includes('://')) host = new URL(trimmed).hostname;
+  } catch (e) {
+    return '';
+  }
+
+  host = host.replace(/\.$/, '');
+  if (!host || /\s/.test(host)) return '';
+  if (host === '__proto__' || host === 'prototype' || host === 'constructor') return '';
+  return host;
+}
+
+function sanitizeSitePermissions(raw) {
+  const safeStore = Object.create(null);
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return safeStore;
+
+  for (const [rawHost, rawPermissions] of Object.entries(raw)) {
+    const host = normalizeHost(rawHost);
+    if (!host || !rawPermissions || typeof rawPermissions !== 'object' || Array.isArray(rawPermissions)) continue;
+
+    const cleanPermissions = Object.create(null);
+    for (const [permission, value] of Object.entries(rawPermissions)) {
+      if (!ALLOWED_PERMISSION_KEYS.has(permission)) continue;
+      if (!ALLOWED_PERMISSION_VALUES.has(value)) continue;
+      if (value === 'ask') continue;
+      cleanPermissions[permission] = value;
+    }
+
+    if (Object.keys(cleanPermissions).length > 0) {
+      safeStore[host] = cleanPermissions;
+    }
+  }
+
+  return safeStore;
+}
+
+function isSafeExternalHttpUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch (e) {
+    return false;
+  }
+}
+
+function isAllowedWebviewUrl(url) {
+  if (!url || typeof url !== 'string') return true;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:' || parsed.protocol === 'data:') return true;
+    if (parsed.protocol === 'about:' && parsed.href === 'about:blank') return true;
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
+function isRendererUiUrl(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'file:') return false;
+    const normalizedPath = parsed.pathname.replace(/\\/g, '/').toLowerCase();
+    return normalizedPath.endsWith('/renderer/index.html');
+  } catch (e) {
+    return false;
+  }
 }
 
 // ==========================================
@@ -639,8 +721,12 @@ function setupSessionBlocking(ses, windowId) {
   
   // Permission request handler (camera, mic, geolocation, notifications)
   ses.setPermissionRequestHandler((webContents, permission, callback, details) => {
+    if (!ALLOWED_PERMISSION_KEYS.has(permission)) return callback(false);
+
     const url = (details && details.requestingUrl) || webContents.getURL();
-    const host = getHostFromUrl(url);
+    const host = normalizeHost(getHostFromUrl(url));
+    if (!host) return callback(false);
+
     const stored = (sitePermissions[host] && sitePermissions[host][permission]) || 'ask';
     
     if (stored === 'allow') return callback(true);
@@ -673,7 +759,11 @@ function setupSessionBlocking(ses, windowId) {
   
   // Permission check handler (synchronous lookups)
   ses.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
-    const host = getHostFromUrl(requestingOrigin || (webContents && webContents.getURL()) || '');
+    if (!ALLOWED_PERMISSION_KEYS.has(permission)) return false;
+
+    const host = normalizeHost(getHostFromUrl(requestingOrigin || (webContents && webContents.getURL()) || ''));
+    if (!host) return false;
+
     const stored = sitePermissions[host] && sitePermissions[host][permission];
     if (stored === 'allow') return true;
     if (stored === 'deny') return false;
@@ -715,6 +805,8 @@ function createWindow(options = {}) {
       webviewTag: true,
       // SECURITY: webSecurity on, no insecure content (chrome UI only)
       sandbox: false, // preload precisa de require
+      webSecurity: true,
+      allowRunningInsecureContent: false,
       partition: partition,
       backgroundThrottling: false,
       spellcheck: false,
@@ -749,6 +841,21 @@ function createWindow(options = {}) {
   // Load the index.html
   win.loadFile(path.join(__dirname, 'renderer/index.html'), {
     query: incognito ? { incognito: '1' } : {}
+  });
+
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (isSafeExternalHttpUrl(url)) {
+      shell.openExternal(url).catch(() => {});
+    }
+    return { action: 'deny' };
+  });
+
+  win.webContents.on('will-navigate', (event, url) => {
+    if (isRendererUiUrl(url)) return;
+    event.preventDefault();
+    if (isSafeExternalHttpUrl(url)) {
+      shell.openExternal(url).catch(() => {});
+    }
   });
 
   // Set up ad blocker and tracking blocker on this session
@@ -1061,6 +1168,34 @@ app.whenReady().then(async () => {
   loadDownloadHistory();
   setupDownloadHandler(session.defaultSession);
   setupAutoUpdater();
+
+  app.on('web-contents-created', (_event, contents) => {
+    contents.on('will-attach-webview', (event, webPreferences, params) => {
+      delete webPreferences.preload;
+      delete webPreferences.preloadURL;
+      webPreferences.nodeIntegration = false;
+      webPreferences.nodeIntegrationInSubFrames = false;
+      webPreferences.nodeIntegrationInWorker = false;
+      webPreferences.contextIsolation = true;
+      webPreferences.sandbox = true;
+      webPreferences.enableRemoteModule = false;
+      webPreferences.webSecurity = true;
+      webPreferences.allowRunningInsecureContent = false;
+
+      if (!isAllowedWebviewUrl(params && params.src)) {
+        event.preventDefault();
+      }
+    });
+
+    if (contents.getType() === 'webview') {
+      contents.setWindowOpenHandler(({ url }) => {
+        if (isSafeExternalHttpUrl(url)) {
+          shell.openExternal(url).catch(() => {});
+        }
+        return { action: 'deny' };
+      });
+    }
+  });
 
   // Telemetria Discord (install/heartbeat — anónimo)
   runTelemetry();
@@ -1398,21 +1533,28 @@ ipcMain.handle('get-site-permissions', () => {
 });
 
 ipcMain.handle('set-site-permission', (event, host, permission, value) => {
-  if (!host) return false;
-  if (!sitePermissions[host]) sitePermissions[host] = {};
+  const normalizedHost = normalizeHost(host);
+  if (!normalizedHost) return false;
+  if (!ALLOWED_PERMISSION_KEYS.has(permission)) return false;
+  if (!ALLOWED_PERMISSION_VALUES.has(value || 'ask')) return false;
+
+  if (!sitePermissions[normalizedHost]) sitePermissions[normalizedHost] = {};
   if (value === 'ask' || !value) {
-    delete sitePermissions[host][permission];
-    if (Object.keys(sitePermissions[host]).length === 0) delete sitePermissions[host];
+    delete sitePermissions[normalizedHost][permission];
+    if (Object.keys(sitePermissions[normalizedHost]).length === 0) delete sitePermissions[normalizedHost];
   } else {
-    sitePermissions[host][permission] = value;
+    sitePermissions[normalizedHost][permission] = value;
   }
   saveSitePermissions();
   return true;
 });
 
 ipcMain.handle('clear-site-permissions', (event, host) => {
-  if (host) delete sitePermissions[host];
-  else sitePermissions = {};
+  if (host) {
+    const normalizedHost = normalizeHost(host);
+    if (!normalizedHost) return false;
+    delete sitePermissions[normalizedHost];
+  } else sitePermissions = Object.create(null);
   saveSitePermissions();
   return true;
 });

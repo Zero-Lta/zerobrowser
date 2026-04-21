@@ -4,33 +4,33 @@
 
 :root {
   /* Surfaces */
-  --bg: #0d0d10;
-  --bg-elevated: #16161b;
-  --bg-raised: #1c1c23;
-  --bg-hover: #22222a;
-  --bg-active: #2a2a33;
+  --bg: #0b0f14;
+  --bg-elevated: #121821;
+  --bg-raised: #171f2b;
+  --bg-hover: #1c2531;
+  --bg-active: #232f3d;
 
   /* Borders */
-  --border: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --border-focus: rgba(99, 102, 241, 0.5);
+  --border: rgba(166, 186, 209, 0.12);
+  --border-strong: rgba(166, 186, 209, 0.22);
+  --border-focus: rgba(174, 194, 217, 0.3);
 
   /* Text */
-  --text: #f5f5f7;
-  --text-secondary: #a6a6b0;
-  --text-muted: #6c6c7a;
-  --text-dim: #3a3a44;
+  --text: #ecf4ff;
+  --text-secondary: #a9bdd5;
+  --text-muted: #6f87a2;
+  --text-dim: #3f536b;
 
   /* Brand / Semantic */
-  --accent: #6366f1;
-  --accent-hover: #818cf8;
-  --accent-soft: rgba(99, 102, 241, 0.12);
+  --accent: #b6bec8;
+  --accent-hover: #c9d1da;
+  --accent-soft: rgba(182, 190, 200, 0.16);
   --danger: #ef4444;
   --danger-soft: rgba(239, 68, 68, 0.12);
-  --success: #10b981;
-  --success-soft: rgba(16, 185, 129, 0.12);
-  --warning: #f59e0b;
-  --warning-soft: rgba(245, 158, 11, 0.12);
+  --success: #16c784;
+  --success-soft: rgba(22, 199, 132, 0.16);
+  --warning: #c9ced6;
+  --warning-soft: rgba(201, 206, 214, 0.14);
 
   /* Radius */
   --radius: 8px;
@@ -41,11 +41,11 @@
   --radius-pill: 999px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
-  --shadow-focus: 0 0 0 3px var(--accent-soft);
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.2);
+  --shadow: 0 4px 14px rgba(0, 0, 0, 0.26);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.34);
+  --shadow-focus: 0 0 0 2px var(--accent-soft);
 
   /* Motion */
   --transition: 0.16s cubic-bezier(0.4, 0, 0.2, 1);
@@ -141,7 +141,7 @@ body.maximized .browser-container {
 .tab-bar {
   display: flex;
   align-items: center;
-  background: #1a1a20;
+  background: var(--bg-elevated);
   height: 40px;
   padding: 0 4px 0 8px;
   flex-shrink: 0;
@@ -152,6 +152,8 @@ body.maximized .browser-container {
   transform: translateZ(0);
   will-change: transform;
   contain: layout paint;
+  border-bottom: 1px solid var(--border);
+  box-shadow: none;
 }
 
 .tab-bar > * {
@@ -187,22 +189,27 @@ body.maximized .browser-container {
   padding: 0 10px 0 12px;
   min-width: 160px;
   max-width: 220px;
-  background: #2a2a35;
-  color: #b0b0bc;
+  background: transparent;
+  color: var(--text-secondary);
   border-radius: 6px;
+  border: 1px solid transparent;
   cursor: pointer;
   user-select: none;
   flex-shrink: 0;
+  transition: background var(--transition), color var(--transition), border-color var(--transition), transform var(--transition);
 }
 
 .tab:hover {
-  background: #36363f;
-  color: #ffffff;
+  background: var(--bg-hover);
+  color: var(--text);
+  border-color: transparent;
 }
 
 .tab.active {
-  background: #4a4a5c;
-  color: #ffffff;
+  background: var(--bg-raised);
+  color: var(--text);
+  border-color: var(--border);
+  box-shadow: none;
 }
 
 /* Drag-and-drop feedback */
@@ -276,15 +283,15 @@ body.maximized .browser-container {
   background: transparent;
   border: none;
   border-radius: 4px;
-  color: #b0b0bc;
+  color: var(--text-secondary);
   cursor: pointer;
   margin: 0 4px;
   flex-shrink: 0;
 }
 
 .new-tab-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--bg-hover);
+  color: var(--text);
 }
 
 /* --- Window controls (min / max / close) --- */
@@ -305,14 +312,14 @@ body.maximized .browser-container {
   background: transparent;
   border: none;
   border-radius: 4px;
-  color: #b0b0bc;
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 0;
 }
 
 .window-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--bg-hover);
+  color: var(--text);
 }
 
 .window-btn.close:hover {
@@ -331,12 +338,14 @@ body.maximized .browser-container {
   display: flex;
   align-items: center;
   padding: 8px 12px;
-  background: var(--bg);
+  background: var(--bg-elevated);
   gap: 6px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
   position: relative;
   z-index: 50;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .nav-buttons {
@@ -439,7 +448,7 @@ body.maximized .browser-container {
 
 .bookmark-btn:hover {
   background: var(--bg-hover);
-  color: var(--warning);
+  color: var(--text);
 }
 
 .bookmark-btn:active { transform: scale(0.9); }
@@ -473,12 +482,13 @@ body.maximized .browser-container {
   font-weight: 500;
   color: var(--text-muted);
   margin-right: 4px;
-  background: transparent;
+  background: var(--bg-raised);
+  border: none;
   transition: background var(--transition), color var(--transition);
 }
 
-.security-indicator.secure { color: var(--success); background: var(--success-soft); }
-.security-indicator.insecure { color: var(--danger); background: var(--danger-soft); }
+.security-indicator.secure { color: var(--success); background: rgba(22, 199, 132, 0.12); }
+.security-indicator.insecure { color: var(--danger); background: rgba(239, 68, 68, 0.12); }
 
 .security-indicator svg {
   width: 11px;
@@ -522,7 +532,7 @@ body.maximized .browser-container {
   top: 0;
   left: 0;
   height: 2px;
-  background: var(--text);
+  background: var(--accent);
   animation: loading 1.5s ease-in-out infinite;
   display: none;
   z-index: 100;
@@ -545,7 +555,7 @@ body.maximized .browser-container {
   display: flex;
   align-items: center;
   padding: 4px 10px;
-  background: var(--bg);
+  background: var(--bg-elevated);
   border-top: 1px solid var(--border);
   min-height: 32px;
   flex-shrink: 0;
@@ -598,12 +608,13 @@ body.maximized .browser-container {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.68);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   z-index: 1000;
   align-items: center;
   justify-content: center;
+  padding: 22px;
   animation: modalFadeIn 0.18s ease-out;
 }
 
@@ -619,7 +630,7 @@ body.maximized .browser-container {
 .modal-content {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   box-shadow: var(--shadow-lg);
   width: 90%;
   max-width: 580px;
@@ -644,25 +655,26 @@ body.maximized .browser-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 22px;
+  padding: 16px 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .modal-header h2 {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 14px 22px;
+  padding: 12px 18px;
   border-top: 1px solid var(--border);
-  background: var(--bg);
+  background: var(--bg-elevated);
   flex-shrink: 0;
 }
 
@@ -670,27 +682,46 @@ body.maximized .browser-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 999px;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1;
-  transition: background var(--transition), color var(--transition);
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
 }
 
 .close-modal:hover {
-  background: var(--bg-hover);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-strong);
   color: var(--text);
 }
 
 .modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 22px;
+  padding: 16px 18px;
+}
+
+.modal-body .notes-textarea,
+.modal-body .todo-input,
+.modal-body .password-input,
+.modal-body .downloads-search,
+.modal-body .downloads-filter {
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.modal-body .notes-textarea:focus,
+.modal-body .todo-input:focus,
+.modal-body .password-input:focus,
+.modal-body .downloads-search:focus,
+.modal-body .downloads-filter:focus {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-focus);
 }
 
 /* List Items */
@@ -701,14 +732,18 @@ body.maximized .browser-container {
   justify-content: space-between;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
-  margin-bottom: 2px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.015);
   cursor: pointer;
-  transition: background var(--transition);
+  transition: background var(--transition), border-color var(--transition), transform var(--transition);
 }
 
 .bookmark-item:hover,
 .history-item:hover {
-  background: var(--bg-hover);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
 }
 
 .bookmark-info,
@@ -858,7 +893,7 @@ body.maximized .browser-container {
   transition: background 0.15s ease, transform 0.15s ease;
 }
 .pstat:hover {
-  background: rgba(99, 102, 241, 0.08);
+  background: rgba(255, 255, 255, 0.05);
   transform: translateY(-1px);
 }
 .pstat-value {
@@ -882,9 +917,9 @@ body.maximized .browser-container {
   font-family: ui-monospace, monospace;
   font-size: 11px;
   padding: 1px 5px;
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 4px;
-  color: var(--accent, #6366f1);
+  color: var(--text-secondary);
 }
 
 .setting-item {
@@ -1023,7 +1058,7 @@ body.maximized .browser-container {
   width: 80px;
   height: 80px;
   margin-bottom: 12px;
-  filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.2));
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.28));
 }
 
 .about-logo {
@@ -1180,7 +1215,7 @@ body.maximized .browser-container {
   padding: 4px;
   min-width: 200px;
   z-index: 9999;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow);
 }
 
 .context-menu.active {
@@ -1249,7 +1284,7 @@ body.maximized .browser-container {
   gap: 4px;
   align-items: center;
   z-index: 50;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow);
 }
 
 .find-bar.active {
@@ -1561,12 +1596,12 @@ body.maximized .browser-container {
    Incognito Mode
    ======================================== */
 body.incognito {
-  --bg: #1a0f1f;
-  --bg-elevated: #241530;
+  --bg: #0b0e13;
+  --bg-elevated: #12171f;
 }
 
 body.incognito .tab-bar {
-  background: linear-gradient(180deg, #2a1a3a 0%, #1a0f1f 100%);
+  background: var(--bg-elevated);
 }
 
 body.incognito .nav-bar::before {
@@ -1576,7 +1611,7 @@ body.incognito .nav-bar::before {
   transform: translateX(-50%);
   top: 4px;
   font-size: 10px;
-  color: #c084fc;
+  color: #a7afbb;
   letter-spacing: 0.08em;
   pointer-events: none;
   opacity: 0.6;
@@ -1802,13 +1837,13 @@ body.incognito .nav-bar::before {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   padding: 6px;
   z-index: 1000;
   display: none;
   animation: menuSlide 0.16s var(--ease-out);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .app-menu.active {
@@ -2066,7 +2101,7 @@ body.incognito .nav-bar::before {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px 16px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-md);
   display: none;
   align-items: center;
   gap: 14px;
@@ -2080,7 +2115,7 @@ body.incognito .nav-bar::before {
 .permission-icon {
   width: 40px;
   height: 40px;
-  background: rgba(99, 102, 241, 0.15);
+  background: var(--bg-raised);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -2323,10 +2358,10 @@ body.incognito .nav-bar::before {
   max-width: 420px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-left: 3px solid var(--accent, #6366f1);
+  border-left: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px 16px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-md);
   display: none;
   align-items: flex-start;
   gap: 12px;
@@ -2344,7 +2379,7 @@ body.incognito .nav-bar::before {
 .update-icon {
   width: 36px;
   height: 36px;
-  background: rgba(99, 102, 241, 0.15);
+  background: var(--bg-raised);
   border-radius: 50%;
   display: flex;
   align-items: center;
