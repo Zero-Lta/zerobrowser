@@ -40,6 +40,8 @@ const bookmarksList = document.getElementById('bookmarksList');
 const historyList = document.getElementById('historyList');
 const downloadsList = document.getElementById('downloadsList');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+const historySearch = document.getElementById('historySearch');
+const historyCount = document.getElementById('historyCount');
 const notesTextarea = document.getElementById('notesTextarea');
 const saveNotesBtn = document.getElementById('saveNotesBtn');
 const todoInput = document.getElementById('todoInput');
@@ -88,6 +90,7 @@ const loadingBar = document.getElementById('loadingBar');
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsModal = document.getElementById('settingsModal');
 const closeSettingsModal = document.getElementById('closeSettingsModal');
+const settingsSearch = document.getElementById('settingsSearch');
 const bookmarksBarEl = document.getElementById('bookmarksBar');
 
 // Default settings
@@ -107,6 +110,8 @@ const defaultSettings = {
 };
 
 let settings = { ...defaultSettings };
+let historyState = [];
+let historySearchQuery = '';
 
 // Search engines
 const searchEngines = {
@@ -1116,6 +1121,7 @@ function setupEventListeners() {
   historyBtn.addEventListener('click', () => {
     loadHistory();
     historyModal.classList.add('active');
+    if (historySearch) historySearch.focus();
   });
   
   closeHistoryModal.addEventListener('click', () => {
@@ -1130,8 +1136,18 @@ function setupEventListeners() {
   
   clearHistoryBtn.addEventListener('click', async () => {
     await window.electronAPI.clearHistory();
+    historyState = [];
+    historySearchQuery = '';
+    if (historySearch) historySearch.value = '';
     loadHistory();
   });
+
+  if (historySearch) {
+    historySearch.addEventListener('input', (e) => {
+      historySearchQuery = (e.target.value || '').trim().toLowerCase();
+      renderHistory();
+    });
+  }
   
   
   // Zoom buttons
@@ -1612,22 +1628,39 @@ async function loadBookmarks() {
 
 // Load history
 async function loadHistory() {
-  const history = await window.electronAPI.getHistory();
-  
-  if (history.length === 0) {
+  historyState = await window.electronAPI.getHistory();
+  renderHistory();
+}
+
+function renderHistory() {
+  const history = historyState || [];
+  const q = historySearchQuery;
+  const filteredHistory = q
+    ? history.filter(item => {
+      const title = (item.title || '').toLowerCase();
+      const url = (item.url || '').toLowerCase();
+      return title.includes(q) || url.includes(q);
+    })
+    : history;
+
+  if (historyCount) {
+    historyCount.textContent = `${filteredHistory.length} / ${history.length} itens`;
+  }
+
+  if (filteredHistory.length === 0) {
     historyList.innerHTML = `
       <div class="empty-state">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"></circle>
           <polyline points="12 6 12 12 16 14"></polyline>
         </svg>
-        <p>Nenhum histórico disponível</p>
+        <p>${q ? 'Sem resultados no histórico' : 'Nenhum histórico disponível'}</p>
       </div>
     `;
     return;
   }
   
-  historyList.innerHTML = history.slice(0, 50).map(item => `
+  historyList.innerHTML = filteredHistory.slice(0, 100).map(item => `
     <div class="history-item" data-url="${item.url}">
       <div class="item-icon">${item.title.charAt(0).toUpperCase()}</div>
       <div class="item-content">
@@ -1768,6 +1801,25 @@ async function deleteTodo(id) {
 let downloadsState = { active: [], history: [] };
 let downloadsSearchQuery = '';
 let downloadsFilterValue = 'all';
+
+function updateDownloadsSummary(visibleItemsCount = 0) {
+  const activeCount = downloadsState.active.length;
+  const completedCount = downloadsState.history.filter(d => (d.finalState || d.state) === 'completed').length;
+  const failedCount = downloadsState.history.filter(d => {
+    const s = d.finalState || d.state;
+    return s === 'cancelled' || s === 'interrupted' || s === 'failed';
+  }).length;
+
+  const visibleChip = document.getElementById('downloadsChipVisible');
+  const activeChip = document.getElementById('downloadsChipActive');
+  const completedChip = document.getElementById('downloadsChipCompleted');
+  const failedChip = document.getElementById('downloadsChipFailed');
+
+  if (visibleChip) visibleChip.textContent = `Visíveis: ${visibleItemsCount}`;
+  if (activeChip) activeChip.textContent = `Ativos: ${activeCount}`;
+  if (completedChip) completedChip.textContent = `Concluídos: ${completedCount}`;
+  if (failedChip) failedChip.textContent = `Falhas: ${failedCount}`;
+}
 
 function formatBytes(bytes) {
   if (!bytes || bytes <= 0) return '0 B';
@@ -1954,6 +2006,7 @@ function renderDownloads() {
   }
   
   if (items.length === 0) {
+    updateDownloadsSummary(0);
     list.innerHTML = `
       <div class="empty-state">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1966,7 +2019,8 @@ function renderDownloads() {
     `;
     return;
   }
-  
+
+  updateDownloadsSummary(items.length);
   list.innerHTML = items.map(({ d, isActive }) => renderDownloadItem(d, isActive)).join('');
 }
 
@@ -2181,13 +2235,29 @@ function setupSettingsListeners() {
       }
     }
   };
+
+  const applySettingsSearch = () => {
+    const query = (settingsSearch && settingsSearch.value ? settingsSearch.value : '').trim().toLowerCase();
+    const activeSection = document.querySelector('.settings-section.active');
+    if (!activeSection) return;
+
+    const rows = activeSection.querySelectorAll('.setting-item');
+    if (!rows.length) return;
+
+    rows.forEach(row => {
+      const text = (row.textContent || '').toLowerCase();
+      row.style.display = !query || text.includes(query) ? '' : 'none';
+    });
+  };
   
   // Open modal
   settingsBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     updateSettingsUI();
     refreshDefaultBrowserStatus();
+    if (settingsSearch) settingsSearch.value = '';
     settingsModal.classList.add('active');
+    applySettingsSearch();
   });
   
   // Close modal
@@ -2209,8 +2279,13 @@ function setupSettingsListeners() {
       document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
       item.classList.add('active');
       document.querySelector(`.settings-section[data-section="${section}"]`).classList.add('active');
+      applySettingsSearch();
     });
   });
+
+  if (settingsSearch) {
+    settingsSearch.addEventListener('input', applySettingsSearch);
+  }
   
   // Theme options
   document.querySelectorAll('.theme-option').forEach(opt => {

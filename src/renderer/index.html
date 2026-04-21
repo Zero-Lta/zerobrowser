@@ -274,7 +274,11 @@
         <h2>Histórico</h2>
         <button class="close-modal" id="closeHistoryModal">&times;</button>
       </div>
-      <div class="modal-body" id="historyList">
+      <div class="history-toolbar">
+        <input type="text" class="history-search" id="historySearch" placeholder="Pesquisar no histórico...">
+        <span class="history-count" id="historyCount">0 itens</span>
+      </div>
+      <div class="modal-body history-body" id="historyList">
         <!-- History will be loaded here -->
       </div>
       <div class="modal-footer">
@@ -298,6 +302,12 @@
           <option value="cancelled">Cancelados/Falhas</option>
         </select>
         <button class="btn-secondary" id="clearDownloadsBtn" title="Limpar histórico">Limpar</button>
+      </div>
+      <div class="downloads-summary" id="downloadsSummary">
+        <span class="downloads-chip" id="downloadsChipVisible">Visíveis: 0</span>
+        <span class="downloads-chip" id="downloadsChipActive">Ativos: 0</span>
+        <span class="downloads-chip" id="downloadsChipCompleted">Concluídos: 0</span>
+        <span class="downloads-chip" id="downloadsChipFailed">Falhas: 0</span>
       </div>
       <div class="modal-body downloads-body" id="downloadsList">
         <!-- Downloads will be loaded here -->
@@ -344,6 +354,9 @@
       <div class="modal-header">
         <h2>Definições</h2>
         <button class="close-modal" id="closeSettingsModal">&times;</button>
+      </div>
+      <div class="settings-toolbar">
+        <input type="text" class="settings-search" id="settingsSearch" placeholder="Pesquisar nesta secção...">
       </div>
       <div class="settings-container">
         <div class="settings-sidebar">

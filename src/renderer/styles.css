@@ -792,6 +792,46 @@ body.maximized .browser-container {
   opacity: 1;
 }
 
+.history-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.history-search {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 12.5px;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.history-search:focus {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-focus);
+}
+
+.history-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.history-body {
+  padding-top: 12px;
+}
+
 .bookmark-delete:hover,
 .history-delete:hover {
   background: var(--bg-active);
@@ -807,12 +847,36 @@ body.maximized .browser-container {
   min-height: 400px;
 }
 
+.settings-toolbar {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.settings-search {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 12.5px;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.settings-search:focus {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-focus);
+}
+
 .settings-sidebar {
   width: 180px;
   border-right: 1px solid var(--border);
   padding: 12px 8px;
   flex-shrink: 0;
   background: var(--bg);
+  overflow-y: auto;
 }
 
 .settings-nav-item {
@@ -834,7 +898,8 @@ body.maximized .browser-container {
 }
 
 .settings-nav-item.active {
-  background: var(--bg-hover);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-strong);
   color: var(--text);
 }
 
@@ -856,6 +921,10 @@ body.maximized .browser-container {
 
 .settings-section.active {
   display: block;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
 }
 
 .settings-section h3 {
@@ -2209,6 +2278,24 @@ body.incognito .nav-bar::before {
 .downloads-toolbar .btn-secondary {
   padding: 7px 14px;
   font-size: 12px;
+}
+
+.downloads-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.downloads-chip {
+  font-size: 11px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 999px;
+  padding: 4px 10px;
 }
 
 .downloads-body {
