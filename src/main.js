@@ -91,6 +91,32 @@ function isSafeExternalHttpUrl(url) {
   }
 }
 
+function registerAsDefaultBrowser() {
+  try {
+    if (process.defaultApp) {
+      const appPath = process.argv[1] ? path.resolve(process.argv[1]) : null;
+      const args = appPath ? [appPath] : [];
+      const okHttp = app.setAsDefaultProtocolClient('http', process.execPath, args);
+      const okHttps = app.setAsDefaultProtocolClient('https', process.execPath, args);
+      return !!(okHttp && okHttps);
+    }
+
+    const okHttp = app.setAsDefaultProtocolClient('http');
+    const okHttps = app.setAsDefaultProtocolClient('https');
+    return !!(okHttp && okHttps);
+  } catch (e) {
+    return false;
+  }
+}
+
+function isDefaultBrowserRegistered() {
+  try {
+    return app.isDefaultProtocolClient('http') && app.isDefaultProtocolClient('https');
+  } catch (e) {
+    return false;
+  }
+}
+
 function isAllowedWebviewUrl(url) {
   if (!url || typeof url !== 'string') return true;
   try {
@@ -1188,10 +1214,19 @@ app.whenReady().then(async () => {
     });
 
     if (contents.getType() === 'webview') {
-      contents.setWindowOpenHandler(({ url }) => {
-        if (isSafeExternalHttpUrl(url)) {
-          shell.openExternal(url).catch(() => {});
+      contents.setWindowOpenHandler(({ url, disposition }) => {
+        if (!isSafeExternalHttpUrl(url)) return { action: 'deny' };
+
+        const host = contents.hostWebContents;
+        if (host && !host.isDestroyed()) {
+          host.send('open-url-in-new-tab', {
+            url,
+            background: disposition === 'background-tab'
+          });
+          return { action: 'deny' };
         }
+
+        shell.openExternal(url).catch(() => {});
         return { action: 'deny' };
       });
     }
@@ -1599,6 +1634,16 @@ ipcMain.handle('window-close', (event) => {
 ipcMain.handle('window-is-maximized', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   return win ? win.isMaximized() : false;
+});
+
+ipcMain.handle('set-default-browser', async () => {
+  const didRegister = registerAsDefaultBrowser();
+  if (!didRegister) return false;
+  return isDefaultBrowserRegistered();
+});
+
+ipcMain.handle('is-default-browser', async () => {
+  return isDefaultBrowserRegistered();
 });
 
 // Optimize browser: clear cache, cookies, DNS, service workers, old history

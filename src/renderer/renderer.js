@@ -483,6 +483,12 @@ const homepageHTML = `
       link.addEventListener('click', () => {
         window.location.href = link.dataset.url;
       });
+
+      link.addEventListener('auxclick', (e) => {
+        if (e.button !== 1) return;
+        e.preventDefault();
+        window.open(link.dataset.url, '_blank');
+      });
     });
 
     searchInput.focus();
@@ -533,6 +539,21 @@ async function init() {
   } catch (e) {
     console.error('Failed to load logo:', e);
   }
+
+  if (window.electronAPI && window.electronAPI.onOpenUrlInNewTab) {
+    window.electronAPI.onOpenUrlInNewTab((payload) => {
+      const nextUrl = typeof payload === 'string' ? payload : (payload && payload.url);
+      if (!nextUrl) return;
+
+      const previousTabId = activeTabId;
+      createNewTab(nextUrl);
+
+      if (payload && payload.background && previousTabId) {
+        switchToTab(previousTabId);
+      }
+    });
+  }
+
   // Apply logo to about modal
   const aboutLogoImg = document.getElementById('aboutLogoImg');
   if (aboutLogoImg && logoDataUrl) aboutLogoImg.src = logoDataUrl;
@@ -1224,35 +1245,173 @@ function setupEventListeners() {
 // Setup keyboard shortcuts
 function setupKeyboardShortcuts() {
   document.addEventListener('keydown', (e) => {
+    const key = e.key;
+    const lowerKey = (key || '').toLowerCase();
+
+    const activeTab = () => tabs.find(t => t.id === activeTabId);
+    const reloadActiveTab = (ignoreCache = false) => {
+      const tab = activeTab();
+      if (!tab || !tab.webview) return;
+      if (ignoreCache && typeof tab.webview.reloadIgnoringCache === 'function') {
+        tab.webview.reloadIgnoringCache();
+      } else {
+        tab.webview.reload();
+      }
+    };
+    const switchToTabByIndex = (index) => {
+      if (!tabs.length) return;
+      if (index >= tabs.length) index = tabs.length - 1;
+      if (index < 0) index = 0;
+      switchToTab(tabs[index].id);
+    };
+    const openSettingsSection = (section) => {
+      if (!settingsModal) return;
+      updateSettingsUI();
+      settingsModal.classList.add('active');
+      document.querySelectorAll('.settings-nav-item').forEach(n => {
+        n.classList.toggle('active', n.dataset.section === section);
+      });
+      document.querySelectorAll('.settings-section').forEach(s => {
+        s.classList.toggle('active', s.dataset.section === section);
+      });
+    };
+
     // Ctrl+T - New tab
-    if (e.ctrlKey && e.key === 't') {
+    if (e.ctrlKey && lowerKey === 't') {
       e.preventDefault();
       createNewTab();
     }
 
+    // Ctrl+N - New window
+    if (e.ctrlKey && lowerKey === 'n' && !e.shiftKey) {
+      e.preventDefault();
+      if (window.electronAPI && window.electronAPI.createNewWindow) {
+        window.electronAPI.createNewWindow();
+      }
+    }
+
+    // Ctrl+Shift+N - Incognito window
+    if (e.ctrlKey && e.shiftKey && lowerKey === 'n') {
+      e.preventDefault();
+      openIncognitoWindow();
+    }
+
     // Ctrl+W - Close tab
-    if (e.ctrlKey && e.key === 'w') {
+    if (e.ctrlKey && lowerKey === 'w') {
       e.preventDefault();
       closeTab(activeTabId);
     }
 
     // Ctrl+Shift+T - Reopen closed tab
-    if (e.ctrlKey && e.shiftKey && e.key === 'T') {
+    if (e.ctrlKey && e.shiftKey && key === 'T') {
       e.preventDefault();
       reopenClosedTab();
     }
 
     // Ctrl+L - Focus URL bar
-    if (e.ctrlKey && e.key === 'l') {
+    if (e.ctrlKey && lowerKey === 'l') {
+      e.preventDefault();
+      urlBar.focus();
+      urlBar.select();
+    }
+
+    // Alt+D / Ctrl+E / Ctrl+K - Focus URL/search bar
+    if ((e.altKey && lowerKey === 'd') || (e.ctrlKey && (lowerKey === 'e' || lowerKey === 'k'))) {
       e.preventDefault();
       urlBar.focus();
       urlBar.select();
     }
 
     // Ctrl+D - Duplicate tab
-    if (e.ctrlKey && e.key === 'd') {
+    if (e.ctrlKey && lowerKey === 'd') {
       e.preventDefault();
       duplicateTab(activeTabId);
+    }
+
+    // Ctrl+B - Open bookmarks
+    if (e.ctrlKey && lowerKey === 'b' && !e.shiftKey) {
+      e.preventDefault();
+      loadBookmarks();
+      bookmarksModal.classList.add('active');
+    }
+
+    // Ctrl+Shift+B - Toggle bookmarks bar
+    if (e.ctrlKey && e.shiftKey && key === 'B') {
+      e.preventDefault();
+      settings.showBookmarksBar = !settings.showBookmarksBar;
+      applySettings();
+      saveSettings();
+      showToast(settings.showBookmarksBar ? 'Barra de favoritos ativada' : 'Barra de favoritos oculta');
+    }
+
+    // Ctrl+J - Open downloads
+    if (e.ctrlKey && lowerKey === 'j') {
+      e.preventDefault();
+      downloadsModal.classList.add('active');
+      loadDownloads();
+    }
+
+    // Alt+Left - Back
+    if (e.altKey && key === 'ArrowLeft') {
+      e.preventDefault();
+      const tab = activeTab();
+      if (tab && tab.webview && tab.webview.canGoBack()) tab.webview.goBack();
+    }
+
+    // Alt+Right - Forward
+    if (e.altKey && key === 'ArrowRight') {
+      e.preventDefault();
+      const tab = activeTab();
+      if (tab && tab.webview && tab.webview.canGoForward()) tab.webview.goForward();
+    }
+
+    // Alt+Home - Open homepage
+    if (e.altKey && lowerKey === 'home') {
+      e.preventDefault();
+      const homepageUrl = getHomepageUrl();
+      const tab = activeTab();
+      if (tab && tab.webview) {
+        tab.url = homepageUrl;
+        tab.title = 'Zero Browser';
+        tab.webview.src = homepageUrl;
+        urlBar.value = '';
+        renderTabs();
+      }
+    }
+
+    // Ctrl+Tab - Next tab
+    if (e.ctrlKey && key === 'Tab' && !e.shiftKey) {
+      e.preventDefault();
+      const currentIndex = tabs.findIndex(t => t.id === activeTabId);
+      if (currentIndex >= 0) switchToTabByIndex((currentIndex + 1) % tabs.length);
+    }
+
+    // Ctrl+Shift+Tab - Previous tab
+    if (e.ctrlKey && key === 'Tab' && e.shiftKey) {
+      e.preventDefault();
+      const currentIndex = tabs.findIndex(t => t.id === activeTabId);
+      if (currentIndex >= 0) switchToTabByIndex((currentIndex - 1 + tabs.length) % tabs.length);
+    }
+
+    // Ctrl+PageDown - Next tab
+    if (e.ctrlKey && key === 'PageDown') {
+      e.preventDefault();
+      const currentIndex = tabs.findIndex(t => t.id === activeTabId);
+      if (currentIndex >= 0) switchToTabByIndex((currentIndex + 1) % tabs.length);
+    }
+
+    // Ctrl+PageUp - Previous tab
+    if (e.ctrlKey && key === 'PageUp') {
+      e.preventDefault();
+      const currentIndex = tabs.findIndex(t => t.id === activeTabId);
+      if (currentIndex >= 0) switchToTabByIndex((currentIndex - 1 + tabs.length) % tabs.length);
+    }
+
+    // Ctrl+1..9 - Switch tab by index (9 = last)
+    if (e.ctrlKey && /^[1-9]$/.test(key)) {
+      e.preventDefault();
+      const index = key === '9' ? tabs.length - 1 : Number(key) - 1;
+      switchToTabByIndex(index);
     }
 
     // Ctrl++ or Ctrl+= - Zoom in
@@ -1285,22 +1444,76 @@ function setupKeyboardShortcuts() {
       toggleDevTools();
     }
 
+    // Ctrl+Shift+I / Ctrl+Shift+J - DevTools
+    if (e.ctrlKey && e.shiftKey && (key === 'I' || key === 'J')) {
+      e.preventDefault();
+      toggleDevTools();
+    }
+
     // Ctrl+F - Find in page
-    if (e.ctrlKey && e.key === 'f') {
+    if (e.ctrlKey && lowerKey === 'f') {
       e.preventDefault();
       openFindBar();
     }
 
+    // F3 / Shift+F3 - Find next / previous
+    if (key === 'F3') {
+      e.preventDefault();
+      if (!findActive) openFindBar();
+      if (findInput && findInput.value) {
+        findInPage(findInput.value, !e.shiftKey, true);
+      }
+    }
+
     // Ctrl+U - View source
-    if (e.ctrlKey && e.key === 'u') {
+    if (e.ctrlKey && lowerKey === 'u') {
       e.preventDefault();
       viewSource();
     }
 
     // Ctrl+P - Print
-    if (e.ctrlKey && e.key === 'p') {
+    if (e.ctrlKey && lowerKey === 'p') {
       e.preventDefault();
       printPage();
+    }
+
+    // Ctrl+H - Open history
+    if (e.ctrlKey && lowerKey === 'h') {
+      e.preventDefault();
+      loadHistory();
+      historyModal.classList.add('active');
+    }
+
+    // F5 - Reload current tab
+    if (key === 'F5') {
+      e.preventDefault();
+      reloadActiveTab(e.shiftKey);
+    }
+
+    // Ctrl+F5 - Hard reload current tab
+    if (e.ctrlKey && key === 'F5') {
+      e.preventDefault();
+      reloadActiveTab(true);
+    }
+
+    // Ctrl+R - Reload current tab
+    if (e.ctrlKey && lowerKey === 'r' && !e.shiftKey) {
+      e.preventDefault();
+      reloadActiveTab(false);
+    }
+
+    // Ctrl+Shift+R - Hard reload current tab
+    if (e.ctrlKey && e.shiftKey && lowerKey === 'r') {
+      e.preventDefault();
+      reloadActiveTab(true);
+    }
+
+    // Ctrl+Shift+Delete - Open privacy settings
+    if (e.ctrlKey && e.shiftKey && key === 'Delete') {
+      e.preventDefault();
+      openSettingsSection('privacy');
+      const clearAllBtn = document.getElementById('clearAllDataBtn');
+      if (clearAllBtn) clearAllBtn.focus();
     }
 
     // Ctrl+Shift+C - Copy URL
@@ -1942,11 +2155,38 @@ function updateSettingsUI() {
 
 function setupSettingsListeners() {
   if (!settingsBtn) return;
+
+  const setDefaultBrowserBtn = document.getElementById('setDefaultBrowserBtn');
+  const defaultBrowserStatus = document.getElementById('defaultBrowserStatus');
+
+  const refreshDefaultBrowserStatus = async () => {
+    if (!defaultBrowserStatus) return;
+    if (!window.electronAPI || !window.electronAPI.isDefaultBrowser) {
+      defaultBrowserStatus.textContent = 'Não suportado nesta versão.';
+      return;
+    }
+
+    try {
+      const isDefault = await window.electronAPI.isDefaultBrowser();
+      defaultBrowserStatus.textContent = isDefault
+        ? 'Este browser já é o predefinido do Windows.'
+        : 'Este browser não é o predefinido do Windows.';
+      if (setDefaultBrowserBtn) {
+        setDefaultBrowserBtn.disabled = !!isDefault;
+      }
+    } catch (err) {
+      defaultBrowserStatus.textContent = 'Não foi possível verificar o browser predefinido.';
+      if (setDefaultBrowserBtn) {
+        setDefaultBrowserBtn.disabled = false;
+      }
+    }
+  };
   
   // Open modal
   settingsBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     updateSettingsUI();
+    refreshDefaultBrowserStatus();
     settingsModal.classList.add('active');
   });
   
@@ -2074,6 +2314,29 @@ function setupSettingsListeners() {
   if (openDataFolderBtn) {
     openDataFolderBtn.addEventListener('click', () => {
       window.electronAPI.openUserDataFolder();
+    });
+  }
+
+  if (setDefaultBrowserBtn) {
+    setDefaultBrowserBtn.addEventListener('click', async () => {
+      if (!window.electronAPI || !window.electronAPI.setDefaultBrowser) {
+        showToast('Esta funcionalidade não está disponível.');
+        return;
+      }
+
+      setDefaultBrowserBtn.disabled = true;
+      const originalText = setDefaultBrowserBtn.textContent;
+      setDefaultBrowserBtn.textContent = 'A definir...';
+
+      try {
+        const ok = await window.electronAPI.setDefaultBrowser();
+        showToast(ok ? 'Zero Browser definido como predefinido' : 'Não foi possível definir como predefinido');
+      } catch (e) {
+        showToast('Erro ao definir browser predefinido');
+      } finally {
+        setDefaultBrowserBtn.textContent = originalText;
+        await refreshDefaultBrowserStatus();
+      }
     });
   }
 
@@ -3075,14 +3338,6 @@ function setupNewFeatureListeners() {
       setTimeout(() => renderExtensions(), 100);
     });
   }
-  
-  // Incognito keyboard shortcut Ctrl+Shift+N
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key === 'N') {
-      e.preventDefault();
-      openIncognitoWindow();
-    }
-  });
   
   // Apply incognito class if window is incognito
   if (isIncognitoWindow()) {

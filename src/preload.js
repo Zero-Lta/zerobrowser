@@ -23,6 +23,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Window management
   createNewWindow: () => ipcRenderer.invoke('create-new-window'),
+  setDefaultBrowser: () => ipcRenderer.invoke('set-default-browser'),
+  isDefaultBrowser: () => ipcRenderer.invoke('is-default-browser'),
+  onOpenUrlInNewTab: (callback) => subscribe('open-url-in-new-tab', callback),
 
   // Logo
   getLogo: () => ipcRenderer.invoke('get-logo'),
