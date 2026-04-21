@@ -2212,6 +2212,22 @@ function setupSettingsListeners() {
 
   const setDefaultBrowserBtn = document.getElementById('setDefaultBrowserBtn');
   const defaultBrowserStatus = document.getElementById('defaultBrowserStatus');
+  const openDefaultAppsBtn = document.getElementById('openDefaultAppsBtn');
+
+  const openDefaultAppsSettings = async () => {
+    if (!window.electronAPI || !window.electronAPI.openDefaultAppsSettings) {
+      showToast('Não foi possível abrir as definições do Windows.');
+      return;
+    }
+
+    const opened = await window.electronAPI.openDefaultAppsSettings();
+    if (!opened) {
+      showToast('O teu sistema não suporta esta ação.');
+      return;
+    }
+
+    showToast('Definições do Windows abertas para associações de ficheiros e links');
+  };
 
   const refreshDefaultBrowserStatus = async () => {
     if (!defaultBrowserStatus) return;
@@ -2404,14 +2420,33 @@ function setupSettingsListeners() {
       setDefaultBrowserBtn.textContent = 'A definir...';
 
       try {
-        const ok = await window.electronAPI.setDefaultBrowser();
-        showToast(ok ? 'Zero Browser definido como predefinido' : 'Não foi possível definir como predefinido');
+        const result = await window.electronAPI.setDefaultBrowser();
+
+        if (result && typeof result === 'object') {
+          if (result.isDefault) {
+            showToast('Zero Browser definido como browser predefinido');
+          } else {
+            showToast('Protocolos registados. Conclui as associações no Windows para .html/.htm/.mhtml/.xhtml/.webp');
+          }
+
+          if (defaultBrowserStatus && result.requiresManualFileAssociations) {
+            defaultBrowserStatus.textContent = 'HTTP/HTTPS/MAILTO registados. Conclui os tipos de ficheiro (.html, .htm, .mhtml, .xht, .xhtml, .webp) em Definições do Windows.';
+          }
+        } else {
+          showToast(result ? 'Zero Browser definido como predefinido' : 'Não foi possível definir como predefinido');
+        }
       } catch (e) {
         showToast('Erro ao definir browser predefinido');
       } finally {
         setDefaultBrowserBtn.textContent = originalText;
         await refreshDefaultBrowserStatus();
       }
+    });
+  }
+
+  if (openDefaultAppsBtn) {
+    openDefaultAppsBtn.addEventListener('click', async () => {
+      await openDefaultAppsSettings();
     });
   }
 

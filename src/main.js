@@ -92,26 +92,49 @@ function isSafeExternalHttpUrl(url) {
 }
 
 function registerAsDefaultBrowser() {
+  const protocols = ['http', 'https', 'mailto', 'webcal'];
+  const status = Object.create(null);
   try {
-    if (process.defaultApp) {
-      const appPath = process.argv[1] ? path.resolve(process.argv[1]) : null;
-      const args = appPath ? [appPath] : [];
-      const okHttp = app.setAsDefaultProtocolClient('http', process.execPath, args);
-      const okHttps = app.setAsDefaultProtocolClient('https', process.execPath, args);
-      return !!(okHttp && okHttps);
+    for (const protocol of protocols) {
+      if (process.defaultApp) {
+        const appPath = process.argv[1] ? path.resolve(process.argv[1]) : null;
+        const args = appPath ? [appPath] : [];
+        status[protocol] = !!app.setAsDefaultProtocolClient(protocol, process.execPath, args);
+      } else {
+        status[protocol] = !!app.setAsDefaultProtocolClient(protocol);
+      }
     }
 
-    const okHttp = app.setAsDefaultProtocolClient('http');
-    const okHttps = app.setAsDefaultProtocolClient('https');
-    return !!(okHttp && okHttps);
+    return status;
   } catch (e) {
-    return false;
+    for (const protocol of protocols) {
+      if (typeof status[protocol] !== 'boolean') status[protocol] = false;
+    }
+    return status;
   }
 }
 
 function isDefaultBrowserRegistered() {
+  const protocols = ['http', 'https', 'mailto', 'webcal'];
+  const status = Object.create(null);
   try {
-    return app.isDefaultProtocolClient('http') && app.isDefaultProtocolClient('https');
+    for (const protocol of protocols) {
+      status[protocol] = !!app.isDefaultProtocolClient(protocol);
+    }
+    return status;
+  } catch (e) {
+    for (const protocol of protocols) {
+      status[protocol] = false;
+    }
+    return status;
+  }
+}
+
+function openWindowsDefaultAppsSettings() {
+  if (process.platform !== 'win32') return false;
+  try {
+    shell.openExternal('ms-settings:defaultapps').catch(() => {});
+    return true;
   } catch (e) {
     return false;
   }
@@ -1637,13 +1660,31 @@ ipcMain.handle('window-is-maximized', (event) => {
 });
 
 ipcMain.handle('set-default-browser', async () => {
-  const didRegister = registerAsDefaultBrowser();
-  if (!didRegister) return false;
-  return isDefaultBrowserRegistered();
+  const requested = registerAsDefaultBrowser();
+  const current = isDefaultBrowserRegistered();
+  const openedSettings = openWindowsDefaultAppsSettings();
+
+  const allRegistered = Object.values(current).every(Boolean);
+  const registeredProtocols = Object.keys(current).filter((key) => current[key]);
+
+  return {
+    isDefault: allRegistered,
+    openedSettings,
+    registeredProtocols,
+    protocolStatus: current,
+    requestedStatus: requested,
+    requiresManualFileAssociations: process.platform === 'win32',
+    fileTypesHint: ['.html', '.htm', '.mhtml', '.xht', '.xhtml', '.webp', '.svg', '.xml']
+  };
 });
 
 ipcMain.handle('is-default-browser', async () => {
-  return isDefaultBrowserRegistered();
+  const status = isDefaultBrowserRegistered();
+  return Object.values(status).every(Boolean);
+});
+
+ipcMain.handle('open-default-apps-settings', async () => {
+  return openWindowsDefaultAppsSettings();
 });
 
 // Optimize browser: clear cache, cookies, DNS, service workers, old history
