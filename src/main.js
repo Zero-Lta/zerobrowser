@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, session, Menu, nativeImage, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { execFileSync } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 
 // Set app/process name (shown in Task Manager for packaged builds)
@@ -134,6 +135,77 @@ function openWindowsDefaultAppsSettings() {
   if (process.platform !== 'win32') return false;
   try {
     shell.openExternal('ms-settings:defaultapps').catch(() => {});
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function addWindowsRegistryValue(keyPath, valueName, valueType, valueData) {
+  const args = ['add', keyPath, '/f', '/t', valueType, '/d', String(valueData)];
+  if (valueName === null) {
+    args.splice(3, 0, '/ve');
+  } else {
+    args.splice(3, 0, '/v', valueName);
+  }
+  execFileSync('reg', args, { stdio: 'ignore', windowsHide: true });
+}
+
+function registerWindowsDefaultAppCapabilities() {
+  if (process.platform !== 'win32' || !app.isPackaged) return false;
+
+  const appName = 'ZeroBrowser';
+  const appDescription = 'Zero Browser';
+  const command = `"${process.execPath}" "%1"`;
+  const capabilitiesPath = `Software\\Clients\\StartMenuInternet\\${appName}\\Capabilities`;
+
+  try {
+    addWindowsRegistryValue(`HKCU\\Software\\Clients\\StartMenuInternet\\${appName}`, null, 'REG_SZ', appDescription);
+    addWindowsRegistryValue(`HKCU\\Software\\Clients\\StartMenuInternet\\${appName}\\DefaultIcon`, null, 'REG_SZ', `${process.execPath},0`);
+    addWindowsRegistryValue(`HKCU\\Software\\Clients\\StartMenuInternet\\${appName}\\shell\\open\\command`, null, 'REG_SZ', command);
+
+    addWindowsRegistryValue(`HKCU\\${capabilitiesPath}`, 'ApplicationName', 'REG_SZ', appDescription);
+    addWindowsRegistryValue(`HKCU\\${capabilitiesPath}`, 'ApplicationDescription', 'REG_SZ', 'A modern, lightweight desktop browser built with Electron');
+
+    addWindowsRegistryValue(`HKCU\\${capabilitiesPath}\\URLAssociations`, 'http', 'REG_SZ', 'ZeroBrowserURL');
+    addWindowsRegistryValue(`HKCU\\${capabilitiesPath}\\URLAssociations`, 'https', 'REG_SZ', 'ZeroBrowserURL');
+    addWindowsRegistryValue(`HKCU\\${capabilitiesPath}\\URLAssociations`, 'mailto', 'REG_SZ', 'ZeroBrowserMAILTO');
+    addWindowsRegistryValue(`HKCU\\${capabilitiesPath}\\URLAssociations`, 'webcal', 'REG_SZ', 'ZeroBrowserWEBCAL');
+
+    addWindowsRegistryValue(`HKCU\\${capabilitiesPath}\\FileAssociations`, '.html', 'REG_SZ', 'ZeroBrowserHTML');
+    addWindowsRegistryValue(`HKCU\\${capabilitiesPath}\\FileAssociations`, '.htm', 'REG_SZ', 'ZeroBrowserHTML');
+    addWindowsRegistryValue(`HKCU\\${capabilitiesPath}\\FileAssociations`, '.mhtml', 'REG_SZ', 'ZeroBrowserMHTML');
+    addWindowsRegistryValue(`HKCU\\${capabilitiesPath}\\FileAssociations`, '.xht', 'REG_SZ', 'ZeroBrowserXHTML');
+    addWindowsRegistryValue(`HKCU\\${capabilitiesPath}\\FileAssociations`, '.xhtml', 'REG_SZ', 'ZeroBrowserXHTML');
+    addWindowsRegistryValue(`HKCU\\${capabilitiesPath}\\FileAssociations`, '.webp', 'REG_SZ', 'ZeroBrowserWEBP');
+
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserURL', null, 'REG_SZ', 'URL:ZeroBrowser Protocol');
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserURL', 'URL Protocol', 'REG_SZ', '');
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserURL\\DefaultIcon', null, 'REG_SZ', `${process.execPath},0`);
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserURL\\shell\\open\\command', null, 'REG_SZ', command);
+
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserMAILTO', null, 'REG_SZ', 'URL:ZeroBrowser MailTo Protocol');
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserMAILTO', 'URL Protocol', 'REG_SZ', '');
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserMAILTO\\shell\\open\\command', null, 'REG_SZ', command);
+
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserWEBCAL', null, 'REG_SZ', 'URL:ZeroBrowser WebCal Protocol');
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserWEBCAL', 'URL Protocol', 'REG_SZ', '');
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserWEBCAL\\shell\\open\\command', null, 'REG_SZ', command);
+
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserHTML', null, 'REG_SZ', 'ZeroBrowser HTML Document');
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserHTML\\DefaultIcon', null, 'REG_SZ', `${process.execPath},0`);
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserHTML\\shell\\open\\command', null, 'REG_SZ', command);
+
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserMHTML', null, 'REG_SZ', 'ZeroBrowser MHTML Document');
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserMHTML\\shell\\open\\command', null, 'REG_SZ', command);
+
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserXHTML', null, 'REG_SZ', 'ZeroBrowser XHTML Document');
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserXHTML\\shell\\open\\command', null, 'REG_SZ', command);
+
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserWEBP', null, 'REG_SZ', 'ZeroBrowser WEBP Image');
+    addWindowsRegistryValue('HKCU\\Software\\Classes\\ZeroBrowserWEBP\\shell\\open\\command', null, 'REG_SZ', command);
+
+    addWindowsRegistryValue('HKCU\\Software\\RegisteredApplications', appName, 'REG_SZ', capabilitiesPath);
     return true;
   } catch (e) {
     return false;
@@ -1217,6 +1289,7 @@ app.whenReady().then(async () => {
   loadDownloadHistory();
   setupDownloadHandler(session.defaultSession);
   setupAutoUpdater();
+  registerWindowsDefaultAppCapabilities();
 
   app.on('web-contents-created', (_event, contents) => {
     contents.on('will-attach-webview', (event, webPreferences, params) => {
@@ -1660,6 +1733,7 @@ ipcMain.handle('window-is-maximized', (event) => {
 });
 
 ipcMain.handle('set-default-browser', async () => {
+  const registryReady = registerWindowsDefaultAppCapabilities();
   const requested = registerAsDefaultBrowser();
   const current = isDefaultBrowserRegistered();
   const openedSettings = openWindowsDefaultAppsSettings();
@@ -1670,6 +1744,7 @@ ipcMain.handle('set-default-browser', async () => {
   return {
     isDefault: allRegistered,
     openedSettings,
+    registryReady,
     registeredProtocols,
     protocolStatus: current,
     requestedStatus: requested,
@@ -1739,6 +1814,7 @@ ipcMain.handle('optimize-browser', async (event, options = {}) => {
 
 // Logo as base64 data URL
 let cachedLogoDataUrl = null;
+
 ipcMain.handle('get-logo', async () => {
   if (cachedLogoDataUrl) return cachedLogoDataUrl;
   try {
